@@ -260,6 +260,19 @@ Two built-in sensitivity configs:
 - **Re-estimation**: conformal calibrator and copula correlation matrix are re-estimated each week using the most recent available data
 - **No model re-training**: the quantile XGBoost model is trained once on data through Dec 2024 and held fixed
 
+### Load Forecasting in Backtest (No Look-Ahead)
+
+At DAM bid-submission time, future hourly demand is **unknown**. The backtest simulates realistic week-ahead load inputs by replacing actual future load features (`Demand`, `Net_Load`, `RE_Penetration`, `Solar_Ramp`) with historical proxies:
+
+1. **Primary proxy**: same-hour-last-week value (i.e., the value observed exactly 168 hours before)
+2. **Fallback**: if last-week data is missing, use the mean of the same hour-of-day over the preceding 4 weeks
+
+This ensures the quantile model's feature matrix contains only information that would genuinely be available at planning time, eliminating look-ahead bias.
+
+### Performance Notes
+
+- **Vectorised data pipeline**: missing generation estimation (`estimate_missing_generation`) uses a vectorised map approach, and weather aggregation (`aggregate_to_national`) uses `groupby` — both replacing row-by-row loops for 10-100x speedups on large datasets.
+
 ### Capture Ratio Definitions
 
 All capture ratios use **simulated** revenues under the **same actual price path**:
@@ -272,6 +285,18 @@ All capture ratios use **simulated** revenues under the **same actual price path
 Per-week: gross revenue, net revenue, all cost components, cycles, SoC statistics, capture ratios
 
 Aggregate: annual net revenue, mean/std capture ratio, realised CVaR, max drawdown, negative weeks, cycles/year
+
+---
+
+## Testing
+
+The `tests/` directory contains pytest smoke tests covering each major layer:
+
+- **`test_data_pipeline.py`**: vectorised estimation and aggregation correctness
+- **`test_optimizer.py`**: LP feasibility, SoC bounds, revenue positivity, cycle constraint enforcement for both deterministic and stochastic formulations
+- **`test_backtest.py`**: look-ahead bias guard (verifies forecasted demand != actual future demand), metrics sanity checks
+
+Run with: `python -m pytest tests/ -v`
 
 ---
 

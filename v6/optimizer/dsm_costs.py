@@ -1,7 +1,25 @@
 """
 CERC Deviation Settlement Mechanism (DSM) cost calculation.
 
-Full slab structure for backtest evaluation. Optimizer uses conservative buffer term.
+Full slab structure for backtest evaluation.  Optimizer uses a simplified
+conservative buffer term (flat INR/MWh adder) to avoid non-linearity in the LP.
+
+CERC DSM Slab Structure (2024-25 Regulations):
+    Under-injection (actual < scheduled):
+        ≤ 2%    → 100% of Normal Rate (NR)
+        2–5%    → 105–115% of NR (frequency-dependent)
+        5–10%   → 115–150% of NR
+        10–20%  → 150–200% of NR
+        > 20%   → 200% of NR (flat)
+    Over-injection (actual > scheduled):
+        ≤ 2%    → paid at NR
+        2–10%   → 90–50% of NR (decreasing)
+        10–20%  → 50–0% of NR
+        > 20%   → 0% (no payment for excess)
+
+    NR ≈ DAM Area Clearing Price for the relevant time block.
+    Grid frequency affects the exact multiplier for under-injection;
+    the implementation uses a conservative (worst-case) interpolation.
 """
 from __future__ import annotations
 

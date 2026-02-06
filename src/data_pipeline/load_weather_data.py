@@ -6,6 +6,7 @@ Fetches data for 5 proxy cities representing India's regional grids
 import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
+from typing import Dict
 import requests
 import time
 from pathlib import Path
@@ -218,7 +219,7 @@ def fetch_all_cities_weather(start_date, end_date, save_dir='data/raw/weather'):
     return weather_data
 
 
-def aggregate_to_national(weather_data_dict):
+def aggregate_to_national(weather_data_dict: Dict[str, pd.DataFrame]) -> pd.DataFrame:
     """
     Aggregate 5-city weather data to national level using demand-weighted average
     
@@ -258,39 +259,23 @@ def aggregate_to_national(weather_data_dict):
         'cloud_cover'
     ]
     
-    # Create weighted averages
-    aggregated = []
-    
-    for timestamp in combined.index.unique():
-        timestamp_data = combined.loc[timestamp]
-        
-        # Handle both single row and multiple rows
-        if isinstance(timestamp_data, pd.Series):
-            timestamp_data = timestamp_data.to_frame().T
-        
-        weights = timestamp_data['weight'].values
-        weights = weights / weights.sum()  # Normalize weights
-        
-        row = {'time': timestamp}
-        
+    # Vectorised weighted aggregation (replaces timestamp-by-timestamp loop)
+    def _weighted_mean(group: pd.DataFrame) -> pd.Series:
+        """Compute weighted mean of weather columns for a single timestamp group."""
+        w = group['weight'].values
+        w = w / w.sum()  # normalise
+        result = {}
         for col in weather_cols:
-            if col in timestamp_data.columns:
-                values = timestamp_data[col].values
-                # Weighted average (handle NaN)
-                valid_mask = ~pd.isna(values)
-                if valid_mask.sum() > 0:
-                    weighted_avg = np.average(
-                        values[valid_mask],
-                        weights=weights[valid_mask]
-                    )
-                    row[col] = weighted_avg
+            if col in group.columns:
+                vals = group[col].values
+                valid = ~pd.isna(vals)
+                if valid.sum() > 0:
+                    result[col] = np.average(vals[valid], weights=w[valid])
                 else:
-                    row[col] = np.nan
-        
-        aggregated.append(row)
-    
-    df_national = pd.DataFrame(aggregated)
-    df_national = df_national.set_index('time')
+                    result[col] = np.nan
+        return pd.Series(result)
+
+    df_national = combined.groupby(combined.index).apply(_weighted_mean)
     df_national = df_national.sort_index()
     
     # Add prefix to indicate national aggregation

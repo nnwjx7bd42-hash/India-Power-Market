@@ -213,7 +213,7 @@ def parse_nerdc_extended_file(filepath):
         return None
 
 
-def estimate_missing_generation(df):
+def estimate_missing_generation(df: pd.DataFrame) -> pd.DataFrame:
     """
     Estimate missing Hydro, Gas, Nuclear values for extended period (2024-2025)
     using historical patterns from Period 1 (2021-2023)
@@ -321,17 +321,21 @@ def estimate_missing_generation(df):
                 can_estimate = missing_mask & period_2_estimated['Total_Generation'].notna()
                 
                 if can_estimate.sum() > 0:
-                    # Get ratios for each timestamp
-                    for idx in period_2_estimated[can_estimate].index:
-                        hour = period_2_estimated.loc[idx, 'Hour']
-                        dow = period_2_estimated.loc[idx, 'DayOfWeek']
-                        
-                        if (hour, dow) in ratios[col].index:
-                            ratio = ratios[col].loc[(hour, dow)]
-                            total_gen = period_2_estimated.loc[idx, 'Total_Generation']
-                            estimated_value = total_gen * ratio
-                            period_2_estimated.loc[idx, col] = estimated_value
-                            estimated_count += 1
+                    # Vectorised map approach (replaces row-by-row loop)
+                    ratio_series = ratios[col]  # MultiIndex (Hour, DayOfWeek) -> ratio
+                    keys = pd.MultiIndex.from_arrays(
+                        [period_2_estimated['Hour'], period_2_estimated['DayOfWeek']],
+                        names=['Hour', 'DayOfWeek'],
+                    )
+                    mapped_ratios = keys.map(
+                        lambda k: ratio_series.get(k, np.nan)
+                    )
+                    fill_mask = can_estimate & pd.notna(mapped_ratios)
+                    period_2_estimated.loc[fill_mask, col] = (
+                        period_2_estimated.loc[fill_mask, 'Total_Generation']
+                        * mapped_ratios[fill_mask]
+                    )
+                    estimated_count += int(fill_mask.sum())
                     
                     print(f"  ✓ Estimated {col}: {can_estimate.sum():,} values")
     

@@ -93,9 +93,18 @@ def generate_correlated_uniforms(
     """
     rng = np.random.default_rng(seed)
     n_hours = corr_matrix.shape[0]
+
+    # Cholesky decomposition of the rank-correlation matrix.
+    # L is the lower triangular factor: corr_matrix = L @ L^T.
     L = cholesky(corr_matrix, lower=True)
+
+    # Draw i.i.d. standard normal samples and induce correlation by
+    # multiplying with L^T (equivalent to sampling from N(0, corr_matrix)).
     Z = rng.standard_normal((n_scenarios, n_hours))
     correlated = Z @ L.T
+
+    # Transform to uniform marginals via the standard normal CDF (Phi).
+    # This is the core Gaussian copula mapping: correlated normals → copula.
     U = norm.cdf(correlated)
     return U  # (n_scenarios, n_hours)
 

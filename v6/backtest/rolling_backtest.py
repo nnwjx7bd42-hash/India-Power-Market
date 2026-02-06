@@ -243,6 +243,54 @@ class RollingBacktest:
             return degraded_bess
         return self.bess
 
+    # Load features that would not be available at week-ahead planning time.
+    # In real operation you only have historical load patterns, not future actuals.
+    _LOAD_FEATURES_TO_FORECAST = {"Demand", "Net_Load", "RE_Penetration", "Solar_Ramp"}
+
+    def _forecast_load_features(
+        self,
+        week_data: pd.DataFrame,
+        boundary: pd.Timestamp,
+    ) -> pd.DataFrame:
+        """
+        Replace future-actual load features with realistic week-ahead proxies.
+
+        At DAM bid-submission time you do **not** know next week's hourly demand.
+        This method substitutes actuals with same-hour-last-week values drawn from
+        the historical window before *boundary*, eliminating look-ahead bias.
+
+        Falls back to a 4-week rolling mean by hour-of-day if last-week data is
+        unavailable for a given hour.
+        """
+        load_cols = [c for c in self._LOAD_FEATURES_TO_FORECAST if c in self.feature_cols]
+        if not load_cols:
+            return week_data  # nothing to replace
+
+        week_data = week_data.copy()
+        hist = self.df.loc[:boundary].iloc[:-1]  # everything strictly before boundary
+
+        for col in load_cols:
+            if col not in hist.columns:
+                continue
+
+            forecasted = np.empty(len(week_data))
+            for i, ts in enumerate(week_data.index):
+                # Primary: same hour, exactly one week ago
+                one_week_ago = ts - pd.Timedelta(hours=168)
+                if one_week_ago in hist.index and not np.isnan(hist.at[one_week_ago, col]):
+                    forecasted[i] = hist.at[one_week_ago, col]
+                else:
+                    # Fallback: mean of the same hour-of-day over last 4 weeks
+                    hour = ts.hour
+                    four_weeks_ago = ts - pd.Timedelta(weeks=4)
+                    window = hist.loc[four_weeks_ago:boundary]
+                    same_hour = window[window.index.hour == hour][col].dropna()
+                    forecasted[i] = same_hour.mean() if len(same_hour) > 0 else 0.0
+
+            week_data[col] = forecasted
+
+        return week_data
+
     def run_single_week(self, week_start: pd.Timestamp, rng: np.random.Generator | None = None) -> Optional[WeekResult]:
         """Run all strategies for a single week (V6: with transaction costs and DSM)."""
         week_end = week_start + pd.Timedelta(hours=self.horizon - 1)
@@ -259,8 +307,13 @@ class RollingBacktest:
             return None
 
         week_data = week_data.iloc[:self.horizon]
-        X_week = week_data[self.feature_cols].values
         actual_prices = week_data[self.target_col].values
+
+        # --- Replace future-actual load features with historical proxies ---
+        # This prevents look-ahead bias: at bid-submission time, future hourly
+        # demand is unknown.  We use same-hour-last-week as the best proxy.
+        week_data = self._forecast_load_features(week_data, boundary)
+        X_week = week_data[self.feature_cols].values
 
         # --- Quantile forecast ---
         q_forecasts = self.model.predict(X_week)  # (168, n_quantiles)

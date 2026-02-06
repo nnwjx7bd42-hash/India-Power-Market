@@ -163,7 +163,15 @@ def add_supply_features(df):
 
 def add_lag_features(df):
     """
-    Add extended lag features
+    Add extended lag features.
+
+    WARNING — LOOK-AHEAD BIAS:
+        The short-term lags created here (P(T-1), P(T-2), P(T-24), P(T-48),
+        Price_MA_24h, Price_Std_24h, etc.) are ONLY safe for **training** and
+        **same-day inference**.  They MUST NOT be used for **week-ahead planning**
+        (v4/v5/v6) because the actual prices and loads for the coming week are
+        unknown at bid-submission time.  The v4 planning config (planning_config.yaml)
+        explicitly excludes these features — do not add them back.
     
     Parameters:
     -----------

@@ -8,7 +8,14 @@ Rockafellar-Uryasev linearisation:
          u_s >= 0            for all s
          + physical BESS constraints (same schedule for all scenarios)
 
-Pure LP (no binaries) — valid for non-negative IEX prices.
+WHY PURE LP (no binary mutual-exclusion constraints):
+    Standard BESS formulations require binary variables to prevent simultaneous
+    charging and discharging in the same timestep.  However, IEX DAM prices are
+    non-negative (floor = 0 INR/MWh), so simultaneous charge + discharge would
+    always *increase* cost without increasing revenue.  Any LP-optimal solution
+    therefore naturally satisfies p_ch[t] * p_dis[t] == 0 for all t.
+    This eliminates the need for big-M or SOS1 constraints, keeping the problem
+    a pure LP solvable in polynomial time by HiGHS's simplex/IPM.
 """
 from __future__ import annotations
 
@@ -113,14 +120,18 @@ def solve_stochastic_cvar(
     m.T = pyo.Set(initialize=time_set)
     m.S = pyo.Set(initialize=scen_set)
 
-    # Decision variables (scenario-independent — here-and-now)
+    # Decision variables (scenario-independent — "here-and-now" decisions).
+    # The dispatch schedule is the SAME across all scenarios — we commit to a
+    # single schedule at bid time, before the uncertain price is realised.
     m.p_dis = pyo.Var(m.T, domain=pyo.NonNegativeReals, bounds=(0, P_max))
     m.p_ch = pyo.Var(m.T, domain=pyo.NonNegativeReals, bounds=(0, P_max))
     m.soc = pyo.Var(m.T, domain=pyo.NonNegativeReals, bounds=(E_min, E_max))
 
-    # CVaR auxiliary variables
-    m.zeta = pyo.Var(domain=pyo.Reals)       # VaR threshold
-    m.u = pyo.Var(m.S, domain=pyo.NonNegativeReals)  # shortfall per scenario
+    # CVaR auxiliary variables (Rockafellar-Uryasev linearisation):
+    #   zeta ≈ VaR_alpha (the alpha-quantile of revenue distribution)
+    #   u[s] ≥ max(0, zeta - R_s)  captures the "shortfall" below VaR
+    m.zeta = pyo.Var(domain=pyo.Reals)
+    m.u = pyo.Var(m.S, domain=pyo.NonNegativeReals)
 
     # Per-scenario net revenue expression (with all transaction costs)
     def _revenue_expr(model, s):
