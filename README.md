@@ -93,6 +93,26 @@ python v6/run_backtest.py --tx-costs-config v6/config/transaction_costs_tx0.yaml
 python v6/run_backtest.py --bess-config v6/config/bess_config_cycles7.yaml
 ```
 
+### Testing
+
+Run the test suite to verify correctness:
+
+```bash
+# Install pytest if not already installed
+pip install pytest
+
+# Run all tests
+python -m pytest tests/ -v
+
+# Run specific test file
+python -m pytest tests/test_optimizer.py -v
+```
+
+The test suite includes:
+- **Data pipeline**: Vectorized estimation and aggregation correctness
+- **Optimizer**: LP feasibility, SoC bounds, cycle constraint enforcement
+- **Backtest**: Look-ahead bias guard (ensures no future data leakage)
+
 ---
 
 ## Data Requirements
@@ -153,6 +173,10 @@ The data pipeline (`src/data_pipeline/`) handles ingestion, cleaning, feature en
 │   └── run_backtest.py           # Full rolling backtest + sensitivity analysis CLI
 │
 ├── docs/                         # Technical notes
+├── tests/                        # Pytest test suite (smoke tests)
+│   ├── test_data_pipeline.py     # Data pipeline correctness
+│   ├── test_optimizer.py         # Optimizer feasibility & constraints
+│   └── test_backtest.py         # Backtest look-ahead bias guard
 ├── requirements.txt
 ├── ARCHITECTURE.md               # Detailed technical walkthrough
 └── .gitignore
@@ -178,6 +202,10 @@ Risk-neutral optimisation chases high-variance strategies. The Rockafellar-Uryas
 
 Raw quantile regression tends to be miscalibrated — the 90% prediction interval might only contain 82% of actual outcomes. Adaptive Conformal Inference adjusts the intervals online, providing asymptotic coverage guarantees even under distribution shift.
 
+### How is look-ahead bias prevented in the backtest?
+
+At DAM bid-submission time, future hourly demand is unknown. The backtest simulates realistic week-ahead inputs by replacing actual future load features (`Demand`, `Net_Load`, `RE_Penetration`, `Solar_Ramp`) with historical proxies (same-hour-last-week, or 4-week rolling mean by hour-of-day). The model predicts prices using only information available at planning time, while revenue is still computed against actual prices for realistic evaluation.
+
 ---
 
 ## Looking for Feedback On
@@ -192,7 +220,7 @@ This is a solo-built project and I'd genuinely appreciate expert critique on:
 
 4. **Indian market cost assumptions** — IEX transaction fees at INR 20/MWh, SLDC at INR 5, RLDC at INR 2, 3% transmission loss, CERC DSM slab structure. Are these realistic for 2024–2025? Would love validation from anyone with actual merchant BESS experience in India.
 
-5. **Backtest methodology** — Rolling weekly with no model re-training during the backtest window. Is this sufficient, or should I implement expanding-window re-training?
+5. **Backtest methodology** — Rolling weekly with no model re-training during the backtest window. The backtest eliminates look-ahead bias by replacing actual future load values with historical proxies (same-hour-last-week) when building forecast features, while still evaluating against actual prices. Is this sufficient, or should I implement expanding-window re-training?
 
 6. **What's missing** — Intraday re-optimisation? Real-time market (RTM) participation? More sophisticated degradation modelling (rainflow counting vs linear throughput)?
 
