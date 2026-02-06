@@ -105,13 +105,9 @@ python v6/run_backtest.py --bess-config v6/config/bess_config_cycles7.yaml
 | [NERLDC / POSOCO](https://nerldc.in/) | Regional demand, supply, RE generation | Monthly Excel files |
 | [Open-Meteo](https://open-meteo.com/) | Historical weather for 5 Indian cities | API / Parquet cache |
 
-Place files according to the structure in `src/data_pipeline/` loaders, then run:
+Place files according to the structure in `src/data_pipeline/` loaders, then run the data pipeline scripts to produce the cleaned Parquet dataset consumed by all downstream layers.
 
-```bash
-python create_dataset_cleaned_19.py
-```
-
-This produces the cleaned Parquet dataset consumed by all downstream layers.
+The data pipeline (`src/data_pipeline/`) handles ingestion, cleaning, feature engineering, and merging into a unified dataset.
 
 ---
 
