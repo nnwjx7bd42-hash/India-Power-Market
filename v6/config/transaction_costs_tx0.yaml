@@ -1,0 +1,12 @@
+##############################################################################
+# V6 — Transaction Costs Configuration (SENSITIVITY: Zero Transmission Loss)
+# Same as transaction_costs.yaml but with tx_loss = 0% to isolate strategy gap
+##############################################################################
+
+costs:
+  iex_transaction_fee_inr_mwh: 20.0
+  sldc_charge_inr_mwh: 5.0
+  rldc_charge_inr_mwh: 2.0
+  transmission_loss_pct: 0.0  # SENSITIVITY: Zero tx loss
+  cross_subsidy_surcharge_inr_mwh: 0.0
+  additional_surcharge_inr_mwh: 0.0

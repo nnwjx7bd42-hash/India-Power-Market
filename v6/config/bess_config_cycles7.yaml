@@ -1,0 +1,28 @@
+##############################################################################
+# V6 — BESS Physical Parameters (SENSITIVITY: 7 cycles/week cap)
+# Same as bess_config.yaml but with max_cycles_per_week = 7.0
+##############################################################################
+
+bess:
+  P_max_mw: 20.0
+  E_cap_mwh: 40.0
+  soc_min_pct: 10.0
+  soc_max_pct: 90.0
+  E_usable_mwh: 32.0
+  E_init_mwh: 20.0
+  eta_charge: 0.9220
+  eta_discharge: 0.9220
+  rte_year1: 0.85
+  rte_degradation_per_year: 0.0025
+  capacity_fade_per_year: 0.02
+  ramp_rate_mw_per_min: 20.0
+  degradation_cost_inr_per_mwh: 1471.0
+
+cycle_limits:
+  max_cycles_per_day: 2
+  max_cycles_per_year: 420
+  max_cycles_per_week: 7.0  # SENSITIVITY: Reduced from 8.08 to 7.0
+
+availability:
+  min_annual_availability: 0.95
+  planned_outage_hours_per_year: 168

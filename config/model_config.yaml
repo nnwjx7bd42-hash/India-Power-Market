@@ -1,0 +1,56 @@
+baseline:
+  model_type: xgboost
+  objective: reg:squarederror
+  max_depth: 6
+  learning_rate: 0.05
+  n_estimators: 500
+  subsample: 0.8
+  colsample_bytree: 0.8
+  early_stopping_rounds: 50
+  random_state: 42
+  eval_metric: rmse
+
+features:
+  baseline:
+    original:
+      - L(T-1)
+      - L(T-2)
+      - L(T-24)
+      - L(T-48)
+      - P(T-1)
+      - P(T-2)
+      - P(T-24)
+      - P(T-48)
+      - Day
+      - Season
+    calendar:
+      - Hour
+      - DayOfWeek
+      - Month
+
+enhanced:
+  model_type: xgboost
+  objective: reg:squarederror
+  max_depth: 6
+  learning_rate: 0.05
+  n_estimators: 500
+  subsample: 0.8
+  colsample_bytree: 0.7  # Lower for more features
+  min_child_weight: 1
+  gamma: 0
+  reg_alpha: 0
+  reg_lambda: 1
+  random_state: 42
+  eval_metric: rmse
+
+quantile:
+  quantiles: [0.1, 0.5, 0.9]
+  use_baseline_params: true  # Use baseline hyperparameters
+
+cv:
+  # Use 14 so CV uses all data through 2025 (Q1 2022 -> Q2 2025). Set to null to auto-compute from data.
+  n_splits: 14
+  gap_hours: 24
+  test_months: 3  # months per test fold
+  # Hours to reserve at end of data for inference test (0 = none). e.g. 168 = last 7 days unused in CV.
+  holdout_hours: 168

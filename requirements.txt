@@ -1,0 +1,36 @@
+# ==============================================================================
+# BESS Arbitrage Optimization Stack — Python Dependencies
+# Tested on Python 3.14 / macOS
+# ==============================================================================
+
+# --- Core scientific stack ---
+numpy>=2.0
+pandas>=2.0
+scipy>=1.11
+scikit-learn>=1.3
+
+# --- Forecasting / ML ---
+xgboost>=2.0
+torch>=2.0                # LSTM point forecaster (v2)
+optuna>=3.4               # Bayesian hyperparameter tuning
+
+# --- Optimization ---
+pyomo>=6.7                # Algebraic modelling (LP / MILP)
+highspy>=1.5              # HiGHS solver (open-source LP)
+
+# --- Data I/O ---
+pyarrow>=14.0             # Parquet read/write
+openpyxl>=3.1             # Excel read (raw NERLDC data)
+pyyaml>=6.0               # Config files
+
+# --- Visualisation ---
+matplotlib>=3.8
+seaborn>=0.13
+
+# --- Statistics ---
+statsmodels>=0.14         # Stationarity tests, diagnostics
+
+# --- Utilities ---
+tqdm>=4.65
+joblib>=1.3
+requests>=2.31            # Weather API fetching

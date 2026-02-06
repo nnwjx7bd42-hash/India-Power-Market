@@ -1,0 +1,62 @@
+# XGBoost + LSTM Ensemble Configuration
+# Paths are relative to v3/ directory
+
+models:
+  xgboost:
+    # Path to trained XGBoost model (joblib with 'model' and 'feature_names' keys)
+    # Run train_baseline.py or train_enhanced.py first, or point to existing model
+    # Set to null to train XGBoost on the fly with same split as LSTM
+    model_path: null
+    # XGBoost in this project does not use a scaler; leave empty or omit
+    scaler_path: null
+
+  lstm:
+    model_path: ../results/lstm_model.pt
+    scaler_path: ../results/lstm_scaler.joblib
+    # Best seed from multi-seed evaluation (for documentation only; inference uses saved weights)
+    seed: 123
+
+ensemble:
+  method: weighted_average
+  weights:
+    xgboost: 0.7
+    lstm: 0.3
+  # If true, grid-search alpha in [0.5, 0.6, 0.7, 0.8, 0.9] on validation set
+  tune_weights: true
+  # Alpha values to search when tune_weights is true
+  alpha_grid: [0.5, 0.6, 0.7, 0.8, 0.9]
+
+# Data and split settings (mirror v2/lstm_config.yaml for identical test period)
+data:
+  dataset: ../dataset_cleaned.parquet
+  target: P(T)
+  holdout_hours: 168
+  train_frac: 0.72
+  val_frac: 0.18
+  test_frac: 0.1
+
+sequence:
+  lookback_hours: 24
+
+# LSTM features (same as v2 for consistency)
+lstm_features:
+  - P(T)
+  - P(T-1)
+  - P(T-24)
+  - L(T-1)
+  - L(T-24)
+  - Hour
+  - Hour_Sin
+  - Hour_Cos
+  - DayOfWeek
+  - IsWeekend
+  - IsMonday
+  - Month
+  - Season
+  - CDH
+  - temperature_2m_national
+  - Demand
+  - Solar
+  - Wind
+  - Net_Load
+  - RE_Penetration

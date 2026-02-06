@@ -1,0 +1,45 @@
+data:
+  dataset: dataset_cleaned.parquet
+  target: P(T)
+  holdout_hours: 168
+  train_frac: 0.72
+  val_frac: 0.18
+  test_frac: 0.1
+  lstm_features:
+  - P(T)
+  - P(T-1)
+  - P(T-24)
+  - L(T-1)
+  - L(T-24)
+  - Hour
+  - Hour_Sin
+  - Hour_Cos
+  - DayOfWeek
+  - IsWeekend
+  - IsMonday
+  - Month
+  - Season
+  - CDH
+  - temperature_2m_national
+  - Demand
+  - Solar
+  - Wind
+  - Net_Load
+  - RE_Penetration
+sequence:
+  lookback_hours: 24
+model:
+  lstm_units:
+  - 32
+  dropout: 0.20
+  dense_units: 16
+  output_activation: linear
+  bidirectional: false
+training:
+  epochs: 50
+  batch_size: 32
+  learning_rate: 0.001
+  early_stopping_patience: 10
+  reduce_lr_patience: 5
+  reduce_lr_factor: 0.5
+random_state: 42

@@ -1,0 +1,21 @@
+##############################################################################
+# V6 — IEX DAM Market Configuration
+# Based on CERC regulations and IEX trading rules
+##############################################################################
+
+iex_dam:
+  time_resolution_min: 15       # 96 blocks per delivery day
+  bid_window_start: "10:00"     # D-1 bid submission opens
+  bid_window_end: "12:00"       # D-1 bid submission closes
+  clearing_time: "15:00"        # D-1 results published
+  delivery_start: "00:00"        # delivery day D
+  delivery_end: "24:00"         # delivery day D
+  
+  min_bid_volume_mw: 0.1        # minimum bid quantum
+  volume_step_mw: 0.1          # bid volume granularity
+  price_step_inr: 1.0           # bid price granularity
+  price_floor_inr_mwh: 0.0      # minimum bid price
+  price_ceiling_inr_mwh: 10000  # price cap (Suo-moto order 04/SM/2023)
+  
+  # HP-DAM (high price) ceiling is 20000 but we model standard DAM only
+  settlement: "daily"           # ACP × volume, settled daily

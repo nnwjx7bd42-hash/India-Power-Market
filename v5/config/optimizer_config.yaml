@@ -1,0 +1,37 @@
+##############################################################################
+# V5 — BESS Stochastic Optimizer + Backtest Configuration
+##############################################################################
+
+bess:
+  power_mw: 10                        # MW — max charge/discharge rate
+  energy_mwh: 20                      # MWh — total usable capacity (2-hour duration)
+  efficiency_oneway: 0.92             # one-way efficiency (round-trip ~0.85)
+  degradation_cost_inr_per_mwh: 1471  # linear throughput degradation cost
+  initial_soc_fraction: 0.5           # start at 50% SoC
+  min_soc_fraction: 0.1               # never go below 10%
+  max_soc_fraction: 0.95              # never exceed 95%
+  terminal_soc_tolerance: 0.1         # end within 10% of initial SoC
+
+optimization:
+  solver: highs
+  beta_risk_aversion: 0.3             # CVaR weight: 0=risk-neutral, 1=fully risk-averse
+  alpha_cvar: 0.95                    # 95th percentile tail risk
+  horizon_hours: 168                  # 1 week planning horizon
+
+consensus:
+  n_samples: 100                      # Monte Carlo samples from conformal intervals
+  action_threshold: 1.0               # fraction that must agree (1.0 = unanimous)
+
+backtest:
+  start_date: "2024-01-01"
+  end_date: "2025-06-10"
+  baselines:
+    - perfect_foresight
+    - naive_threshold
+    - risk_neutral
+
+naive_thresholds:
+  charge_below_inr: 3000
+  discharge_above_inr: 6000
+
+random_state: 42

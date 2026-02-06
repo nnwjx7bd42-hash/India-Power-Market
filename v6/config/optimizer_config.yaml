@@ -1,0 +1,29 @@
+##############################################################################
+# V6 — Realistic Merchant BESS Optimizer Configuration
+##############################################################################
+
+# BESS parameters loaded from bess_config.yaml
+# Market parameters loaded from market_config.yaml
+# Transaction costs loaded from transaction_costs.yaml
+
+optimization:
+  solver: highs
+  beta_risk_aversion: 0.3       # CVaR weight (0=risk-neutral, 1=full risk-averse)
+  alpha_cvar: 0.95              # 95th percentile tail
+  horizon_hours: 168            # 1 week planning horizon
+  dsm_cost_buffer_inr_mwh: 25.0  # conservative estimate for <2% deviation band
+
+consensus:
+  n_samples: 100                # Monte Carlo samples from conformal intervals
+  action_threshold: 1.0         # fraction of samples that must agree (1.0 = unanimous)
+
+backtest:
+  start_date: "2024-01-01"
+  end_date: "2025-06-10"
+  baselines: [perfect_foresight, naive_threshold, risk_neutral]
+
+naive_thresholds:
+  charge_below_inr: 3000
+  discharge_above_inr: 6000
+
+random_state: 42

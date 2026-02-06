@@ -1,0 +1,27 @@
+##############################################################################
+# V6 — Transaction Costs Configuration
+# IEX fees, SLDC/RLDC charges, transmission losses
+##############################################################################
+
+costs:
+  # IEX transaction fee: ceiling 2 paise/kWh = ₹20/MWh from each party
+  # CERC considering reduction to 1.5 paise/kWh — use current rate
+  iex_transaction_fee_inr_mwh: 20.0    # per side (buy AND sell)
+  
+  # SLDC scheduling charges (state-specific, approximate)
+  sldc_charge_inr_mwh: 5.0
+  
+  # RLDC operating charges  
+  rldc_charge_inr_mwh: 2.0
+  
+  # Transmission losses (in-kind, not cash)
+  # CTU losses ~3-4% for inter-state; lower for intra-state
+  transmission_loss_pct: 0.03  # 3% — reduce effective discharge output
+  
+  # Open access cross-subsidy surcharge (state-specific)
+  # Delhi: ~₹1.15/kWh for HT consumers, but BESS may be exempt
+  # Model conservatively
+  cross_subsidy_surcharge_inr_mwh: 0.0  # set to 0 if ISTS-connected
+  
+  # Additional surcharge (state-specific, often waived for RE/storage)
+  additional_surcharge_inr_mwh: 0.0

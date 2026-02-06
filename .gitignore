@@ -1,0 +1,110 @@
+# ==============================================================================
+# .gitignore — BESS Arbitrage Optimization Stack
+# Rule: share CODE and METHODOLOGY, never DATA, WEIGHTS, or RESULTS
+# ==============================================================================
+
+# ── Python bytecode ──────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# ── Virtual environments ─────────────────────────────────────────────────────
+venv/
+env/
+ENV/
+.venv/
+
+# ── IDE / Editor ─────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.cursor/
+
+# ── OS artefacts ─────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ── Jupyter ──────────────────────────────────────────────────────────────────
+.ipynb_checkpoints/
+*.ipynb
+
+# ── Environment / secrets ────────────────────────────────────────────────────
+.env
+.env.local
+*.env
+
+# ── Logs ─────────────────────────────────────────────────────────────────────
+*.log
+
+# ==============================================================================
+# DATA — ALL raw, processed, and intermediate data files
+# ==============================================================================
+/data/
+v2/*.parquet
+v4/data/*.parquet
+
+# ── Binary data formats (anywhere in the repo) ──────────────────────────────
+*.parquet
+*.xlsx
+*.xls
+*.csv
+*.npy
+*.npz
+*.h5
+*.hdf5
+*.feather
+*.arrow
+
+# ==============================================================================
+# MODEL WEIGHTS — trained model artefacts
+# ==============================================================================
+*.pkl
+*.joblib
+*.pt
+*.pth
+*.onnx
+*.json
+!**/config/*.json
+!package.json
+!package-lock.json
+*.bin
+
+# XGBoost / LightGBM model files
+**/quantile_model.json
+**/quantile_meta.json
+**/conformal_state.json
+
+# ==============================================================================
+# RESULTS — backtest P&L, metrics, plots, schedules, bids
+# ==============================================================================
+/results/
+v2/results/
+v2/v3/results/
+v4/results/
+v5/results/
+v6/results/
+
+# ── Plots (anywhere) ────────────────────────────────────────────────────────
+*.png
+*.jpg
+*.jpeg
+*.svg
+*.pdf
+
+# ==============================================================================
+# TRAINING ARTEFACTS — Optuna trials, scalers, intermediate outputs
+# ==============================================================================
+/models/
+
+# ==============================================================================
+# BUILD / PACKAGING ───────────────────────────────────────────────────────────
+build/
+dist/
+*.egg-info/
+*.egg
+.eggs/
+sdist/
+wheels/

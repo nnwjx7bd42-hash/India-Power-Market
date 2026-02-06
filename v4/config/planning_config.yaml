@@ -1,0 +1,92 @@
+##############################################################################
+# V4 — Probabilistic Planning Engine Configuration
+# Week-ahead quantile forecasting + scenario generation (no live price lags)
+##############################################################################
+
+data:
+  dataset: "../v2/dataset_cleaned.parquet"
+  target: "P(T)"
+  holdout_hours: 168            # 1 week held out (Jun 17-24 2025, same as v2)
+  train_end: "2024-12-31"       # Training ends here
+  val_end: "2025-04-30"         # Validation: Jan-Apr 2025
+  # Test: May 2025 – Jun 16 2025
+  # Holdout: Jun 17-24 2025 (same period as v1/v2/v3)
+
+features:
+  calendar:
+    - Hour
+    - Hour_Sin
+    - Hour_Cos
+    - DayOfWeek
+    - IsWeekend
+    - IsMonday
+    - Month
+    - Season
+    - IsHoliday
+  weather:
+    - temperature_2m_national
+    - CDH
+    - direct_radiation_national
+    - wind_speed_10m_national
+  load:
+    - Demand
+    - Net_Load
+    - RE_Penetration
+    - Solar_Ramp
+  anchors:
+    - P_same_hour_last_week       # P(t-168)
+    - P_same_hour_2weeks_ago      # P(t-336)
+    - P_weekly_avg_by_hour        # rolling 4-week mean for this hour-of-day
+    - P_weekly_median_by_hour     # rolling 4-week median
+    - P_weekly_std_by_hour        # rolling 4-week std (volatility regime)
+    - P_percentile_90_by_hour     # rolling 4-week 90th percentile
+  interactions:
+    - Hour_x_CDH
+    - RE_Pen_x_Hour
+
+  # Features explicitly EXCLUDED (near-term lags unavailable at planning time)
+  excluded:
+    - "P(T-1)"
+    - "P(T-2)"
+    - "P(T-24)"
+    - "P(T-48)"
+    - "P_T-3"
+    - "P_T-4"
+    - "L(T-1)"
+    - "L(T-2)"
+    - "L(T-24)"
+    - "L(T-48)"
+    - "Price_MA_24h"
+    - "Price_Std_24h"
+    - "Load_MA_24h"
+    - "Load_Std_24h"
+
+quantiles: [0.05, 0.10, 0.20, 0.30, 0.40, 0.50, 0.60, 0.70, 0.80, 0.90, 0.95]
+
+model:
+  n_estimators: 500
+  max_depth: 6
+  learning_rate: 0.04
+  min_child_weight: 50
+  subsample: 0.8
+  colsample_bytree: 0.8
+  reg_alpha: 0.1
+  reg_lambda: 1.0
+  early_stopping_rounds: 20
+
+tuning:
+  n_trials: 80
+  metric: "avg_pinball"           # Optimise mean pinball loss across all quantiles
+
+scenarios:
+  n_raw: 200                     # Raw copula samples
+  n_reduced: 10                  # After forward reduction
+  correlation_window_weeks: 52   # Weeks of residuals for rank correlation
+  seed: 42
+
+conformal:
+  calibration_weeks: 4           # Last N weeks of validation as calibration set
+  target_coverage: 0.90          # Nominal 90% interval
+  learning_rate: 0.05            # Adaptive conformal PID step size
+
+random_state: 42

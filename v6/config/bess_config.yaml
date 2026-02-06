@@ -1,0 +1,28 @@
+##############################################################################
+# V6 — BESS Physical Parameters (20MW/40MWh Merchant System)
+# Based on SECI Odisha tender and TERI-BRPL Kilokari project specifications
+##############################################################################
+
+bess:
+  P_max_mw: 20.0              # MW power rating
+  E_cap_mwh: 40.0             # MWh nameplate energy capacity
+  soc_min_pct: 10.0           # % minimum SOC (LFP chemistry)
+  soc_max_pct: 90.0           # % maximum SOC
+  E_usable_mwh: 32.0          # = 40 * (0.9 - 0.1) — usable capacity
+  E_init_mwh: 20.0            # 50% starting SOC
+  eta_charge: 0.9220          # one-way charge efficiency
+  eta_discharge: 0.9220       # one-way discharge efficiency
+  rte_year1: 0.85             # round-trip efficiency Year 1
+  rte_degradation_per_year: 0.0025  # RTE drops ~0.25%/yr → 0.82 by Year 12
+  capacity_fade_per_year: 0.02      # 2% capacity fade/yr for LFP
+  ramp_rate_mw_per_min: 20.0  # BESS can ramp full power in <1 min (not binding)
+  degradation_cost_inr_per_mwh: 1471.0  # INR/MWh throughput-based degradation cost
+
+cycle_limits:
+  max_cycles_per_day: 2       # hard cap from SECI Odisha tender
+  max_cycles_per_year: 420    # contract year limit
+  max_cycles_per_week: 8.08   # = 420/52, for weekly optimization horizon
+
+availability:
+  min_annual_availability: 0.95  # 95% = max 438 hours offline/year
+  planned_outage_hours_per_year: 168  # 1 week maintenance

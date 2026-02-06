@@ -1,0 +1,60 @@
+# Inference Pipeline Configuration
+
+# Model paths
+models:
+  enhanced: models/training/enhanced_model.pkl
+  quantile: models/training/quantile_models.pkl
+  baseline: models/training/baseline_model.pkl  # Optional
+
+# Data paths
+data:
+  historical: data/processed/dataset_cleaned.parquet
+  weather_cache: data/raw/weather  # Cache directory for weather forecasts
+
+# Forecast parameters
+forecast:
+  default_days: 7
+  max_days: 16  # Open-Meteo API limit
+  hours_needed: 168  # Minimum historical hours needed (for weekly lags)
+
+# Weather API
+weather:
+  api_endpoint: https://api.open-meteo.com/v1/forecast
+  cities:
+    - Delhi
+    - Mumbai
+    - Chennai
+    - Kolkata
+    - Guwahati
+  rate_limit_seconds: 0.5  # Delay between API calls
+
+# Load profile
+load_profile:
+  use_temperature_adjustment: false  # Future: adjust patterns by temperature
+  pattern_window_days: 30  # Days to use for pattern analysis
+
+# Supply estimation
+supply:
+  use_historical_ratios: true
+  renewable_estimation:
+    solar_factor: 0.1  # Fallback if no historical data
+    wind_factor: 0.01  # Fallback if no historical data
+  conventional_defaults:
+    hydro_share: 0.10  # ~10% of demand
+    gas_share: 0.05    # ~5% of demand
+    nuclear_share: 0.03  # ~3% of demand
+
+# Output
+output:
+  directory: results/inference
+  formats:
+    - csv
+    - parquet
+    - json
+  include_metadata: true
+  create_plots: false  # Future: generate visualization plots
+
+# Feature engineering
+features:
+  fill_missing_strategy: median  # median, mean, forward_fill
+  handle_outliers: false  # Future: outlier detection/removal
