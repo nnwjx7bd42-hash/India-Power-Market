@@ -260,5 +260,4 @@ So **assessment of learning** is: out-of-sample performance on the **same tempor
 - **Config**: `config/model_config.yaml` — `cv`, `baseline`, `enhanced`, `quantile`.
 - **Metrics**: `src/validation/metrics.py` — `calculate_metrics`, `calculate_directional_accuracy`, etc.
 - **Tuning**: `src/validation/hyperparameter_tuning.py` — `tune_with_baseline_comparison`, `get_param_distributions()`.
-- **Dataset creation**: `regenerate_full_dataset.py`, `fix_data_issues.py`, `src/data_pipeline/merge_datasets.py`, `src/data_pipeline/feature_engineering.py`.
-- **Data and column semantics**: `HISTORICAL_DATA_USAGE.md`.
+- **Dataset creation**: `src/data_pipeline/merge_datasets.py`, `src/data_pipeline/feature_engineering.py`.

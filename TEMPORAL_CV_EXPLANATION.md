@@ -498,6 +498,5 @@ Check residual diagnostics and compare feature distributions across folds.
 
 ## Related Documentation
 
-- [`COMPLETE_HISTORICAL_DATA_USAGE.md`](COMPLETE_HISTORICAL_DATA_USAGE.md) - What historical data is used in training vs inference
 - [`README.md`](README.md) - Project overview and usage
-- [`PROJECT_STRUCTURE.md`](PROJECT_STRUCTURE.md) - File organization
+- [`ARCHITECTURE.md`](ARCHITECTURE.md) - Detailed technical architecture
