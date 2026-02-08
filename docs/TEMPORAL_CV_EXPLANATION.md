@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document explains how temporal cross-validation works in the IEX electricity price forecasting model. The model **deliberately hides data from itself** during training to prove it can predict the unknown future.
+This document explains how temporal cross-validation works in the IEX electricity price forecasting model. **All date ranges, fold counts, and example numbers in this doc are illustrative** — they describe the methodology and typical configuration, not actual data or run outputs. The model **deliberately hides data from itself** during training to prove it can predict the unknown future.
 
 ## The Core Concept: Simulating Future Predictions
 
@@ -35,7 +35,7 @@ During testing, the model:
 
 ### Configuration Parameters
 
-From [`config/model_config.yaml`](config/model_config.yaml):
+From [`../config/model_config.yaml`](../config/model_config.yaml):
 
 ```yaml
 cv:
@@ -221,7 +221,7 @@ flowchart TD
 ### Step 2: Model Makes Prediction
 
 ```python
-# From train_baseline.py / train_enhanced.py
+# From v2/train_lstm.py and point-forecast pipeline
 X_test = df[features].loc[test_indices]  # Features only, no P(T)
 y_test = df['P(T)'].loc[test_indices]    # Actual prices (hidden from model)
 
@@ -256,7 +256,7 @@ percentage_error = 130 / 4320 * 100  # = 3.0% APE
 
 ### Data Splitting
 
-From [`train_baseline.py`](train_baseline.py:76-100):
+From [`../v2/train_lstm.py`](../v2/train_lstm.py) and CV logic in [`../src/validation/temporal_cv.py`](../src/validation/temporal_cv.py):
 
 ```python
 for fold_idx, (train_indices, test_indices) in enumerate(cv):
@@ -366,24 +366,22 @@ flowchart LR
 
 ---
 
-## Actual CV Results
+## Example CV Results (Illustrative Only)
 
-From [`results/training/enhanced_cv_results.csv`](results/training/enhanced_cv_results.csv):
+After running temporal CV, results are written to `results/training/` (e.g. `enhanced_cv_results.csv`). The table below is **illustrative only** — real metrics depend on your data and model.
 
-| Fold | Train Hours | Test Hours | RMSE | MAE | MAPE | R² | Dir. Acc |
-|------|-------------|------------|------|-----|------|----|----------| 
-| 1 | 2,905 | 2,160 | ₹1,926 | ₹1,010 | 13.8% | 0.77 | 81.8% |
-| 2 | 5,065 | 2,184 | ₹1,527 | ₹1,185 | 16.9% | 0.82 | 52.8% |
-| 3 | 7,249 | 2,208 | ₹1,083 | ₹733 | 14.8% | 0.86 | 80.9% |
-| 4 | 9,457 | 2,208 | ₹666 | ₹413 | 8.2% | 0.89 | 87.8% |
-| 5 | 11,665 | 2,160 | ₹956 | ₹645 | 10.4% | 0.89 | 80.8% |
-| 6 | 13,825 | 2,184 | ₹794 | ₹526 | 10.2% | 0.91 | 69.4% |
+| Fold | Train Hours | Test Hours | RMSE (example) | MAPE (example) | R² (example) |
+|------|-------------|------------|----------------|----------------|--------------|
+| 1 | ~2,900 | ~2,160 | — | e.g. 12–16% | e.g. 0.75–0.85 |
+| 2 | ~5,000 | ~2,180 | — | e.g. 12–16% | e.g. 0.80–0.88 |
+| … | … | … | … | … | … |
+| 6 | ~14,000 | ~2,180 | — | e.g. 9–12% | e.g. 0.88–0.92 |
 
-**Observations:**
-- ✅ **MAPE improves** as training data grows (Fold 1: 13.8% → Fold 6: 10.2%)
-- ✅ **R² increases** (0.77 → 0.91), indicating better fit
-- ✅ **Directional accuracy** generally high (52-88%), model captures price direction
-- ✅ **No dramatic performance drops**, indicating no overfitting
+**What to look for (on your own runs):**
+- MAPE often improves as training data grows (more history → better fit)
+- R² often increases across folds
+- Directional accuracy typically in a reasonable range (e.g. 60–90% depending on period)
+- No single fold with dramatically worse performance (could indicate overfitting or data issues)
 
 ---
 
@@ -405,7 +403,7 @@ cat results/training/enhanced_cv_results.csv
 ```python
 import pandas as pd
 
-# Load predictions
+# Load predictions (path relative to project root)
 df = pd.read_parquet('results/training/enhanced_predictions.parquet')
 print(df[['timestamp', 'y_true', 'y_pred']].head(20))
 ```
@@ -440,20 +438,20 @@ Diagnostic plots are saved in `results/training/diagnostics/`. Look for:
 
 ### Key Files
 
-1. **CV Split Logic**: [`src/validation/temporal_cv.py`](src/validation/temporal_cv.py)
-   - `temporal_cv_split()` function (lines 11-71): Creates train/test splits
-   - `TemporalCV` class (lines 74-151): Iterator over CV folds
+1. **CV Split Logic**: [`../src/validation/temporal_cv.py`](../src/validation/temporal_cv.py)
+   - `temporal_cv_split()` function: Creates train/test splits
+   - `TemporalCV` class: Iterator over CV folds
 
-2. **Training Loop**: [`train_baseline.py`](train_baseline.py) / [`train_enhanced.py`](train_enhanced.py)
-   - Lines 76-138: Iterates over folds, trains model, makes predictions
-   - Lines 88-93: Creates validation set from training data
-   - Lines 100-103: Calculates metrics comparing predictions to actuals
+2. **Training Loop**: [`../v2/train_lstm.py`](../v2/train_lstm.py) and related scripts in `v2/`
+   - Iterates over folds, trains model, makes predictions
+   - Creates validation set from training data
+   - Calculates metrics comparing predictions to actuals
 
-3. **Metrics Calculation**: [`src/validation/metrics.py`](src/validation/metrics.py)
-   - `calculate_metrics()` function (lines 83-110): Computes RMSE, MAE, MAPE, R², Directional Accuracy
+3. **Metrics Calculation**: [`../src/validation/metrics.py`](../src/validation/metrics.py)
+   - `calculate_metrics()`: Computes RMSE, MAE, MAPE, R², Directional Accuracy
 
-4. **Configuration**: [`config/model_config.yaml`](config/model_config.yaml)
-   - Lines 50-53: CV parameters (`n_splits`, `gap_hours`, `test_months`)
+4. **Configuration**: [`../config/model_config.yaml`](../config/model_config.yaml)
+   - CV parameters (`n_splits`, `gap_hours`, `test_months`)
 
 ---
 
@@ -498,5 +496,5 @@ Check residual diagnostics and compare feature distributions across folds.
 
 ## Related Documentation
 
-- [`README.md`](README.md) - Project overview and usage
-- [`ARCHITECTURE.md`](ARCHITECTURE.md) - Detailed technical architecture
+- [README.md](../README.md) - Project overview and usage
+- [ARCHITECTURE.md](../ARCHITECTURE.md) - Detailed technical architecture
