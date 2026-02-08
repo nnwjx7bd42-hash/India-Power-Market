@@ -25,6 +25,11 @@ ENV/
 
 # ── Local / non-repo docs ───────────────────────────────────────────────────
 IES Docs/
+docs/INVESTOR_METRICS_SUMMARY.md
+docs/UYP_Business_Plan_VPP_Updated.md
+docs/FULL_AUDIT_REPORT.md
+docs/STRESS_TEST_RESULTS.md
+docs/LSTM_HYPERPARAMETER_OPTIMIZATION_NOTE.md
 
 # ── OS artefacts ─────────────────────────────────────────────────────────────
 .DS_Store
