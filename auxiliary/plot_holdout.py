@@ -11,9 +11,10 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 
-ROOT = Path(__file__).resolve().parent
-CSV_PATH = ROOT / "results" / "holdout_predictions.csv"
-OUT_PATH = ROOT / "results" / "holdout_actual_vs_predictions.png"
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+V2_ROOT = PROJECT_ROOT / "v2"
+CSV_PATH = V2_ROOT / "results" / "holdout_predictions.csv"
+OUT_PATH = V2_ROOT / "results" / "holdout_actual_vs_predictions.png"
 
 
 def main():

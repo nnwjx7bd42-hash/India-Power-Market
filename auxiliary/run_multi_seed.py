@@ -16,16 +16,14 @@ from pathlib import Path
 
 import yaml
 
-
-def get_v2_root():
-    return Path(__file__).resolve().parent
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+V2_ROOT = PROJECT_ROOT / "v2"
 
 
 def run_one_seed(seed: int, quiet: bool = False) -> dict:
     """Run train_lstm.py with --seed and return test_mape, test_rmse from lstm_metrics.yaml."""
-    root = get_v2_root()
-    train_script = root / "train_lstm.py"
-    metrics_path = root / "results" / "lstm_metrics.yaml"
+    train_script = PROJECT_ROOT / "v2" / "train_lstm.py"
+    metrics_path = V2_ROOT / "results" / "lstm_metrics.yaml"
     cmd = [sys.executable, str(train_script), "--seed", str(seed)]
     if quiet:
         out = subprocess.DEVNULL
@@ -33,7 +31,7 @@ def run_one_seed(seed: int, quiet: bool = False) -> dict:
     else:
         out = None
         err = None
-    result = subprocess.run(cmd, cwd=str(root), stdout=out, stderr=err)
+    result = subprocess.run(cmd, cwd=str(PROJECT_ROOT), stdout=out, stderr=err)
     if result.returncode != 0:
         return {"seed": seed, "test_mape": None, "test_rmse": None, "error": True}
     if not metrics_path.exists():
@@ -71,8 +69,7 @@ def main():
     )
     args = parser.parse_args()
 
-    root = get_v2_root()
-    (root / "results").mkdir(parents=True, exist_ok=True)
+    (V2_ROOT / "results").mkdir(parents=True, exist_ok=True)
 
     results = []
     for i, seed in enumerate(args.seeds):
@@ -119,7 +116,7 @@ def main():
     if args.out:
         out_path = Path(args.out)
         if not out_path.is_absolute():
-            out_path = root / out_path
+            out_path = V2_ROOT / out_path
         out_path.parent.mkdir(parents=True, exist_ok=True)
         with open(out_path, "w") as f:
             f.write("seed,test_mape,test_rmse\n")

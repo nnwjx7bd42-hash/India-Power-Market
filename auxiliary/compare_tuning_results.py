@@ -12,9 +12,8 @@ from pathlib import Path
 import pandas as pd
 import yaml
 
-
-def get_v2_root():
-    return Path(__file__).resolve().parent
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+V2_ROOT = PROJECT_ROOT / "v2"
 
 
 def resolve_path(path, root):
@@ -86,7 +85,7 @@ def main():
     )
     args = parser.parse_args()
 
-    root = get_v2_root()
+    root = V2_ROOT
     single_trials_path = resolve_path(args.single_trials, root)
     nested_trials_path = resolve_path(args.nested_trials, root)
     metrics_path = resolve_path(args.metrics, root)

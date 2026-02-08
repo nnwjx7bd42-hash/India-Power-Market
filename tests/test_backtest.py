@@ -83,6 +83,43 @@ class TestLoadForecastingNoLookahead:
             "(otherwise there may be look-ahead bias)"
         )
 
+    def test_load_proxy_correlation_below_threshold(self):
+        """
+        Correlation between proxy and actual should be well below 1.0.
+        With random synthetic data, same-hour-last-week proxy is NOT
+        expected to track the future week perfectly.
+        """
+        df = self._make_planning_df(10)
+        load_cols = ["Demand", "Net_Load", "RE_Penetration", "Solar_Ramp"]
+
+        week_start = pd.Timestamp("2024-03-04")  # Monday of week 10
+        boundary = week_start
+        week_end = week_start + pd.Timedelta(hours=167)
+        week_data = df.loc[week_start:week_end].iloc[:168].copy()
+        hist = df.loc[:boundary].iloc[:-1]
+
+        for col in load_cols:
+            actual_vals = week_data[col].values.copy()
+            forecasted = np.empty(len(week_data))
+
+            for i, ts in enumerate(week_data.index):
+                one_week_ago = ts - pd.Timedelta(hours=168)
+                if one_week_ago in hist.index:
+                    forecasted[i] = hist.at[one_week_ago, col]
+                else:
+                    hour = ts.hour
+                    four_weeks_ago = ts - pd.Timedelta(weeks=4)
+                    window = hist.loc[four_weeks_ago:boundary]
+                    same_hour = window[window.index.hour == hour][col].dropna()
+                    forecasted[i] = same_hour.mean() if len(same_hour) > 0 else 0.0
+
+            # Correlation should be below 0.99 (random data → ~0)
+            corr = np.corrcoef(actual_vals, forecasted)[0, 1]
+            assert corr < 0.99, (
+                f"Proxy correlation for {col} is {corr:.4f} — suspiciously "
+                f"close to 1.0, may indicate look-ahead bias"
+            )
+
 
 # ── Metrics computation ──────────────────────────────────────────────────
 

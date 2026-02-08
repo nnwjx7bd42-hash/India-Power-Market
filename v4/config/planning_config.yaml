@@ -10,7 +10,7 @@ data:
   train_end: "2024-12-31"       # Training ends here
   val_end: "2025-04-30"         # Validation: Jan-Apr 2025
   # Test: May 2025 – Jun 16 2025
-  # Holdout: Jun 17-24 2025 (same period as v1/v2/v3)
+  # Holdout: Jun 17-24 2025 (same period as v1/v2, v3)
 
 features:
   calendar:

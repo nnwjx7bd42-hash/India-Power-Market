@@ -19,8 +19,9 @@ import pandas as pd
 import yaml
 
 # Add v2 to path for importing train_lstm utilities
-V3_ROOT = Path(__file__).resolve().parent
-V2_ROOT = V3_ROOT.parent
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+V3_ROOT = PROJECT_ROOT / "v3"
+V2_ROOT = PROJECT_ROOT / "v2"
 sys.path.insert(0, str(V2_ROOT))
 
 try:

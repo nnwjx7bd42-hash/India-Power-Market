@@ -82,7 +82,7 @@ v4/data/*.parquet
 # ==============================================================================
 /results/
 v2/results/
-v2/v3/results/
+v3/results/
 v4/results/
 v5/results/
 v6/results/

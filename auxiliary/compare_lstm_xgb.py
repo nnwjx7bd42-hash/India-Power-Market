@@ -8,6 +8,11 @@ XGBoost uses lag features; both evaluated on the same test window.
 import sys
 from pathlib import Path
 
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+V2_ROOT = PROJECT_ROOT / "v2"
+if str(PROJECT_ROOT / "v2") not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT / "v2"))
+
 import joblib
 import numpy as np
 import pandas as pd
@@ -34,13 +39,9 @@ except ImportError:
 from sklearn.preprocessing import MinMaxScaler
 
 
-def get_v2_root():
-    return Path(__file__).resolve().parent
-
-
 def load_config(config_path=None):
     if config_path is None:
-        config_path = get_v2_root() / "lstm_config.yaml"
+        config_path = V2_ROOT / "lstm_config.yaml"
     with open(config_path, "r") as f:
         return yaml.safe_load(f)
 
@@ -77,9 +78,12 @@ def rmse(y_true, y_pred):
 
 
 def main():
-    root = get_v2_root()
     config = load_config()
-    dataset_path = root / config["data"]["dataset"]
+    dataset_path = V2_ROOT / config["data"]["dataset"]
+    if not dataset_path.exists():
+        dataset_path = PROJECT_ROOT / "data" / "processed" / "dataset_cleaned.parquet"
+    if not dataset_path.exists():
+        dataset_path = PROJECT_ROOT / config["data"]["dataset"]
     if not dataset_path.exists():
         print(f"Dataset not found: {dataset_path}")
         sys.exit(1)
@@ -127,10 +131,8 @@ def main():
     t2 = int(n_seq * (train_frac + val_frac))
     test_start_seq = t2
     test_end_seq = n_seq
-    # Test period in original row index: rows [test_start_seq + lookback - 1, n_seq + lookback - 1] inclusive
-    # i.e. sequence index test_start_seq predicts hour at original index test_start_seq + lookback
     test_start_row = test_start_seq + lookback
-    test_end_row = n_seq + lookback  # last row index used for last sequence
+    test_end_row = n_seq + lookback
     if test_end_row > n:
         test_end_row = n
     y_test_actual = y_raw[test_start_row:test_end_row]
@@ -149,13 +151,12 @@ def main():
     n_features = X_seq.shape[2]
 
     lstm_mape = lstm_rmse = None
-    model_path = root / "results" / "lstm_model.keras"
-    model_pt = root / "results" / "lstm_model.pt"
+    model_path = V2_ROOT / "results" / "lstm_model.keras"
+    model_pt = V2_ROOT / "results" / "lstm_model.pt"
     if HAS_TF and model_path.exists():
         model = keras.models.load_model(model_path)
         y_pred_scaled = model.predict(X_test_lstm, verbose=0).flatten()
         y_pred_actual = inverse_transform_price(y_pred_scaled, scaler, n_features, price_col_index)
-        # Align length if needed
         min_len = min(len(y_test_actual), len(y_pred_actual))
         lstm_mape = mape(y_test_actual[:min_len], y_pred_actual[:min_len])
         lstm_rmse = rmse(y_test_actual[:min_len], y_pred_actual[:min_len])
@@ -176,7 +177,7 @@ def main():
     else:
         print("\nLSTM: No saved model found in v2/results/. Run: python v2/train_lstm.py")
 
-    # ---------- XGBoost: same test period (test_start_row : test_end_row) ----------
+    # ---------- XGBoost: same test period ----------
     xgb_features = [
         "P(T-1)", "P(T-2)", "P(T-24)", "P(T-48)",
         "Hour", "DayOfWeek", "Month", "Season",
@@ -185,7 +186,6 @@ def main():
     if not xgb_features:
         print("XGBoost: No lag features found in dataset.")
     elif HAS_XGB:
-        # Train on data up to test start; test on same rows as LSTM
         X_train_xgb = df_clean.iloc[:test_start_row][xgb_features].fillna(0)
         y_train_xgb = df_clean.iloc[:test_start_row][target]
         X_test_xgb = df_clean.iloc[test_start_row:test_end_row][xgb_features].fillna(0)

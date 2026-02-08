@@ -10,17 +10,22 @@ from pathlib import Path
 import pandas as pd
 import yaml
 
-def get_v2_root():
-    return Path(__file__).resolve().parent
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+V2_ROOT = PROJECT_ROOT / "v2"
+
 
 def load_config():
-    with open(get_v2_root() / "lstm_config.yaml", "r") as f:
+    with open(V2_ROOT / "lstm_config.yaml", "r") as f:
         return yaml.safe_load(f)
 
+
 def main():
-    root = get_v2_root()
     config = load_config()
-    path = root / config["data"]["dataset"]
+    path = V2_ROOT / config["data"]["dataset"]
+    if not path.exists():
+        path = PROJECT_ROOT / "data" / "processed" / "dataset_cleaned.parquet"
+    if not path.exists():
+        path = PROJECT_ROOT / config["data"]["dataset"]
     if not path.exists():
         print(f"Dataset not found: {path}")
         sys.exit(1)
@@ -50,7 +55,6 @@ def main():
     n_seq = n - lookback
     t1 = int(n_seq * train_frac)
     t2 = int(n_seq * (train_frac + val_frac))
-    # Test targets: sequence indices t2 : n_seq -> row indices (t2+lookback) : (n_seq-1+lookback)
     test_start_row = t2 + lookback
     test_end_row = n_seq + lookback - 1
     if test_end_row >= n:
@@ -114,7 +118,7 @@ def main():
         ax.set_title("V2 LSTM: Test period vs Aug 2023 (price volatility)")
         ax.legend(loc="upper right")
         ax.grid(True, alpha=0.3)
-        out = root / "results" / "test_period_inspection.png"
+        out = V2_ROOT / "results" / "test_period_inspection.png"
         out.parent.mkdir(parents=True, exist_ok=True)
         plt.tight_layout()
         plt.savefig(out, dpi=150)

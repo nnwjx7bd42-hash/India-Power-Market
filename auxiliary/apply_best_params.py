@@ -11,9 +11,8 @@ from pathlib import Path
 
 import yaml
 
-
-def get_v2_root():
-    return Path(__file__).resolve().parent
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+V2_ROOT = PROJECT_ROOT / "v2"
 
 
 def deep_merge(base, override):
@@ -40,9 +39,12 @@ def main():
     parser.add_argument("--dry-run", action="store_true", help="Print merged config, do not write")
     args = parser.parse_args()
 
-    root = get_v2_root()
-    best_path = Path(args.best) if args.best else root / "results" / "optuna_lstm_best_params.yaml"
-    config_path = Path(args.config) if args.config else root / "lstm_config.yaml"
+    best_path = Path(args.best) if args.best else V2_ROOT / "results" / "optuna_lstm_best_params.yaml"
+    config_path = Path(args.config) if args.config else V2_ROOT / "lstm_config.yaml"
+    if not best_path.is_absolute():
+        best_path = V2_ROOT / best_path
+    if not config_path.is_absolute():
+        config_path = V2_ROOT / config_path
 
     if not best_path.exists():
         print(f"Best params not found: {best_path}", file=sys.stderr)

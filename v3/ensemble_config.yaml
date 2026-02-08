@@ -1,5 +1,5 @@
 # XGBoost + LSTM Ensemble Configuration
-# Paths are relative to v3/ directory
+# Paths are relative to v3/; ../v2/ points at the v2 directory
 
 models:
   xgboost:
@@ -11,8 +11,8 @@ models:
     scaler_path: null
 
   lstm:
-    model_path: ../results/lstm_model.pt
-    scaler_path: ../results/lstm_scaler.joblib
+    model_path: ../v2/results/lstm_model.pt
+    scaler_path: ../v2/results/lstm_scaler.joblib
     # Best seed from multi-seed evaluation (for documentation only; inference uses saved weights)
     seed: 123
 
@@ -28,7 +28,7 @@ ensemble:
 
 # Data and split settings (mirror v2/lstm_config.yaml for identical test period)
 data:
-  dataset: ../dataset_cleaned.parquet
+  dataset: ../v2/dataset_cleaned.parquet
   target: P(T)
   holdout_hours: 168
   train_frac: 0.72

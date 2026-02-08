@@ -5,7 +5,7 @@ Bayesian hyperparameter tuning for the v4 multi-quantile XGBoost model.
 Minimises average pinball loss on validation across all quantiles.
 
 Usage:
-  python tune_quantile_xgb.py [--config ../config/planning_config.yaml] [--trials 80]
+  python auxiliary/tune_quantile_xgb.py [--config v4/config/planning_config.yaml] [--trials 80]
 """
 
 import argparse
@@ -18,7 +18,8 @@ import pandas as pd
 import xgboost as xgb
 import yaml
 
-V4_ROOT = Path(__file__).resolve().parent.parent
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+V4_ROOT = PROJECT_ROOT / "v4"
 sys.path.insert(0, str(V4_ROOT))
 
 from evaluation.pinball_loss import avg_pinball_loss

@@ -146,8 +146,13 @@ The data pipeline (`src/data_pipeline/`) handles ingestion, cleaning, feature en
 │   ├── train_xgb_final.py        # XGBoost final training
 │   ├── tune_lstm_bayesian.py     # Optuna Bayesian HP search
 │   ├── tune_lstm_nested_cv.py    # Nested temporal cross-validation
-│   ├── v3/                       # Weighted ensemble (LSTM + XGBoost)
 │   └── lstm_config.yaml
+│
+├── v3/                           # Weighted ensemble (LSTM + XGBoost)
+│   ├── run_ensemble.py           # Prediction + analysis pipeline
+│   ├── ensemble_predict.py       # Load models, combine predictions
+│   ├── ensemble_analysis.py      # Error correlation, plots
+│   └── ensemble_config.yaml
 │
 ├── v4/                           # Probabilistic forecasting engine
 │   ├── config/                   # Planning config (features, quantiles, scenarios)
