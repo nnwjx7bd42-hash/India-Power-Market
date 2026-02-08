@@ -61,7 +61,7 @@ Near-term lags (`P(T-1)`, `P(T-2)`, `P(T-24)`) are **deliberately excluded** fro
 
 ## Layer 2: Point Forecasting
 
-**Location**: `v2/`
+**Location**: `v2/` (point models), `v3/` (ensemble)
 
 Two point-forecast models, tuned independently:
 
@@ -79,6 +79,7 @@ Two point-forecast models, tuned independently:
 
 ### V3 Ensemble
 
+- **Location**: `v3/` at repo root (run_ensemble.py, ensemble_predict.py, ensemble_analysis.py)
 - Weighted average of LSTM and XGBoost predictions
 - Weights optimised on validation set (minimise MAPE)
 

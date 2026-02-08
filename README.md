@@ -177,6 +177,12 @@ The data pipeline (`src/data_pipeline/`) handles ingestion, cleaning, feature en
 │   ├── run_optimizer.py          # Single-week runner
 │   └── run_backtest.py           # Full rolling backtest + sensitivity analysis CLI
 │
+├── auxiliary/                    # Non-essential scripts (run from project root)
+│   ├── README.md                 # Script list and run instructions
+│   ├── audit_full_pipeline.py   # Full pipeline re-run audit
+│   ├── stress_test_pipeline.py  # Pytest stress tests (data, forecast, backtest)
+│   └── ...                       # compare_lstm_xgb, plot_holdout, run_multi_seed, tune_quantile_xgb, etc.
+│
 ├── docs/                         # Technical notes
 ├── tests/                        # Pytest test suite (smoke tests)
 │   ├── test_data_pipeline.py     # Data pipeline correctness
