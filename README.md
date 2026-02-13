@@ -18,6 +18,8 @@ The Indian power market features sequential DAM and RTM settlement. A merchant B
 
 ## Performance Summary (143 Days)
 
+*Training Period: Apr 1, 2022 – Sep 30, 2024 (Historical Market Clearing)*  
+*Validation Period: Oct 1, 2024 – Jan 31, 2025 (Out-of-sample Calibration)*  
 *Backtest Period: Feb 1, 2025 – Jun 24, 2025 (Peak Spread Season).*
 
 | Metric | Stochastic SP (Recalibrated) | Deterministic (q50) | Perfect Foresight |
