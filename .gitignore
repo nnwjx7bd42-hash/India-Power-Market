@@ -40,3 +40,5 @@ Data/Predictions/
 # results (summary metadata allowed)
 !results/*.json
 docs/
+"High level build plan"
+"Scraping IEX India Market Snapshot Data — Document.md"
