@@ -30,9 +30,9 @@ The Indian power market features sequential DAM and RTM settlement. A merchant B
 | **Avg. Daily Cycles** | 1.2 | 1.1 | 1.3 |
 
 **Risk-Return Frontier ($\lambda$ Sweep)** *(post-regulatory net, CERC 2024)*:
-- **Baseline ($\lambda=0$):** ₹196.3M net, +₹75K worst-day.
-- **Balanced ($\lambda=0.1$):** ₹195.9M net, +₹87K worst-day.
-- **Defensive ($\lambda=0.5$):** ₹189.5M net, +₹85K worst-day.
+- **Baseline ($\lambda=0$):** ₹196.3M net, +₹75K worst-day, Resilience 1.06.
+- **Balanced ($\lambda=0.1$):** ₹195.9M net, +₹87K worst-day, Resilience 1.07.
+- **Defensive ($\lambda=0.5$):** ₹189.5M net, +₹85K worst-day, Resilience 1.07.
 
 ---
 

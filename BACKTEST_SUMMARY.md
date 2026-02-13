@@ -62,16 +62,18 @@ To evaluate the efficiency of the Two-Stage Stochastic Program, we compare the r
 
 The following table demonstrates the impact of the risk-aversion coefficient ($\lambda$) on realized outcomes. All values are **post-regulatory net** (CERC 2024 DSM, IEX fees, degradation).
 
-| Lambda ($\lambda$) | Net Revenue (₹M) | Worst Day (₹K) | Sharpe (Ann.) | Avg Daily Cycles |
+| Lambda ($\lambda$) | Net Revenue (₹M) | Worst Day (₹K) | Custom Resilience* | Avg Daily Cycles |
 | :--- | :--- | :--- | :--- | :--- |
-| **0.00 (Baseline)** | **196.27** | **+75.1** | 36.6 | 1.13 |
-| **0.01** | 196.41 | +75.1 | 36.6 | 1.13 |
-| **0.05** | 196.02 | +85.9 | 36.7 | 1.13 |
-| **0.10 (Balanced)** | **195.86** | **+86.8** | **36.9** | 1.13 |
-| **0.30** | 192.73 | +83.7 | 37.0 | 1.13 |
-| **0.50 (Defensive)** | **189.46** | **+84.6** | 36.7 | 1.13 |
+| **0.00 (Baseline)** | **196.27** | **+75.1** | 1.06 | 1.13 |
+| **0.01** | 196.41 | +75.1 | 1.06 | 1.13 |
+| **0.05** | 196.02 | +85.9 | 1.07 | 1.13 |
+| **0.10 (Balanced)** | **195.86** | **+86.8** | **1.07** | 1.13 |
+| **0.30** | 192.73 | +83.7 | 1.07 | 1.13 |
+| **0.50 (Defensive)** | **189.46** | **+84.6** | 1.07 | 1.13 |
 
-**Key Insight**: Revenue is remarkably stable across the λ range — the spread from λ=0 to λ=0.5 is only **₹6.8M (3.5%)**, while the worst-day floor improves from +₹75K to +₹85K. The system inherently operates in a low-risk regime.
+*\*Custom Resilience = Mean / (Mean - Worst). Measures the strength of the profit floor relative to average returns.*
+
+**Key Insight**: Revenue is remarkably stable across the λ range — the spread from λ=0 to λ=0.5 is only **₹6.8M (3.5%)**, while the worst-day floor sits at +₹75K–₹87K. The tightly clustered resilience (1.06–1.07) confirms the system inherently operates in a low-risk regime.
 
 ---
 
