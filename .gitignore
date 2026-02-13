@@ -37,4 +37,5 @@ Thumbs.db
 models/
 Data/Features/
 Data/Predictions/
-results/
+# results (summary metadata allowed)
+!results/*.json

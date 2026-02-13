@@ -1,0 +1,44 @@
+{
+  "perfect_foresight": {
+    "total_revenue": 160178043.44250536,
+    "mean_daily": 1112347.5239062873,
+    "median_daily": 1176899.6836804606,
+    "std_daily": 299213.65222127864,
+    "min_daily": 231206.3842133438,
+    "max_daily": 1882774.9373490405,
+    "negative_days": 0,
+    "total_discharged": 31441.71100079055,
+    "avg_cycles": 1.0917260764163383,
+    "avg_charge_price": 2262.117257132436,
+    "avg_discharge_price": 8068.007624316765,
+    "capture_ratio": 1.0
+  },
+  "forecast_q50": {
+    "total_revenue": 154562353.35158372,
+    "mean_daily": 1073349.6760526646,
+    "median_daily": 1135142.7277150252,
+    "std_daily": 300551.8676668074,
+    "min_daily": 172496.32913354645,
+    "max_daily": 1773120.8561857073,
+    "negative_days": 0,
+    "total_discharged": 31311.71100079055,
+    "avg_cycles": 1.0872121875274496,
+    "avg_charge_price": 2314.3108120077313,
+    "avg_discharge_price": 7971.258158498382,
+    "capture_ratio": 0.9649409496443415
+  },
+  "naive_baseline": {
+    "total_revenue": 153143425.08273193,
+    "mean_daily": 1063496.0075189718,
+    "median_daily": 1120604.734331043,
+    "std_daily": 302482.8331513384,
+    "min_daily": 167437.05178716104,
+    "max_daily": 1729891.344778179,
+    "negative_days": 0,
+    "total_discharged": 31866.71100079055,
+    "avg_cycles": 1.1064830208607828,
+    "avg_charge_price": 2338.228445451368,
+    "avg_discharge_price": 7891.730630415521,
+    "capture_ratio": 0.9560825053884588
+  }
+}
