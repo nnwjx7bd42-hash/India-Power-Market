@@ -1,9 +1,8 @@
 # Data sourcing & cleaning scripts (not part of the model codebase)
 data_sourcing/
 
-# Raw data and metadata (large files, not tracked)
-Data/Raw/
-Data/metadata/
+# Data and metadata (large files, not tracked)
+Data/
 
 # Python
 __pycache__/
