@@ -13,6 +13,7 @@ sys.path.append(str(Path(__file__).resolve().parent.parent))
 from src.optimizer.bess_params import BESSParams
 from src.optimizer.scenario_loader import ScenarioLoader
 from src.optimizer.two_stage_bess import TwoStageBESS
+from src.optimizer.costs import CostModel
 from scripts.run_phase3b_backtest import evaluate_actuals
 
 def run_cvar_sweep(args):
@@ -50,6 +51,12 @@ def run_cvar_sweep(args):
     results_dir = Path("Data/Backtest/cvar_sweep")
     results_dir.mkdir(parents=True, exist_ok=True)
     
+    # Load Cost Model for regulatory settlement
+    cost_model = None
+    if Path("config/costs_config.yaml").exists():
+        cost_model = CostModel.from_yaml("config/costs_config.yaml")
+        print("Loaded CostModel for regulatory settlement")
+    
     sweep_summary = []
     
     for l_val in lambdas:
@@ -78,6 +85,7 @@ def run_cvar_sweep(args):
                 res['dam_schedule'], 
                 day_data['dam_actual'], 
                 day_data['rtm_actual'],
+                cost_model=cost_model,
                 lambda_dev=step_config['lambda_dev']
             )
             

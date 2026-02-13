@@ -60,18 +60,18 @@ To evaluate the efficiency of the Two-Stage Stochastic Program, we compare the r
 
 ## 4. Risk-Return Frontier
 
-The following table demonstrates the impact of the risk-aversion coefficient ($\lambda$) on realized outcomes.
+The following table demonstrates the impact of the risk-aversion coefficient ($\lambda$) on realized outcomes. All values are **post-regulatory net** (CERC 2024 DSM, IEX fees, degradation).
 
-> [!NOTE]
-> The λ sweep below was computed **before** the CERC 2024 DSM friction was added to the LP objective. Net revenue figures here are on a gross basis. Re-running `run_cvar_sweep.py` with the updated pipeline will produce updated net-cost numbers.
+| Lambda ($\lambda$) | Net Revenue (₹M) | Worst Day (₹K) | Sharpe (Ann.) | Avg Daily Cycles |
+| :--- | :--- | :--- | :--- | :--- |
+| **0.00 (Baseline)** | **196.27** | **+75.1** | 36.6 | 1.13 |
+| **0.01** | 196.41 | +75.1 | 36.6 | 1.13 |
+| **0.05** | 196.02 | +85.9 | 36.7 | 1.13 |
+| **0.10 (Balanced)** | **195.86** | **+86.8** | **36.9** | 1.13 |
+| **0.30** | 192.73 | +83.7 | 37.0 | 1.13 |
+| **0.50 (Defensive)** | **189.46** | **+84.6** | 36.7 | 1.13 |
 
-| Lambda ($\lambda$) | Gross Revenue (₹M) | Worst Day (₹K) | Avg Daily Cycles |
-| :--- | :--- | :--- | :--- |
-| **0.00 (Baseline)** | **234.3** | **+2.7** | 1.20 |
-| **0.10 (Balanced)** | ~230 | ~+13 | 1.20 |
-| **0.50 (Defensive)** | ~220 | ~+89 | 1.20 |
-
-*These are indicative. Exact post-regulatory net numbers require re-running `run_cvar_sweep.py` with the updated cost model.*
+**Key Insight**: Revenue is remarkably stable across the λ range — the spread from λ=0 to λ=0.5 is only **₹6.8M (3.5%)**, while the worst-day floor improves from +₹75K to +₹85K. The system inherently operates in a low-risk regime.
 
 ---
 
