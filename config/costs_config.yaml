@@ -1,0 +1,36 @@
+costs:
+  # IEX Transaction Fees
+  iex_transaction_fee:
+    enabled: true
+    fee_per_mwh_per_side: 200  # ₹/MWh (2 paise/kWh) applied to BOTH charge and discharge
+    # Round-trip cost = 2 × 200 = ₹400/MWh
+
+  # SLDC/RLDC Scheduling Charges
+  scheduling_charges:
+    enabled: true
+    sldc_per_day: 2000  # ₹/day flat daily cap
+    rldc_per_mwh: 1.80  # ₹/MWh for scheduled energy
+
+  # Battery Degradation (constant ₹/MWh throughput)
+  degradation:
+    enabled: true
+    cost_per_mwh_throughput: 650  # ₹/MWh discharged
+
+  # ISTS Transmission Charges
+  ists_charges:
+    enabled: false
+    charge_per_mwh: 0
+    waiver: true  # Co-located BESS commissioned by June 2028
+
+  # DSM Penalties (Phase 3C: constant rate approximation)
+  dsm_penalties:
+    enabled: true
+    mode: "constant"
+    estimated_penalty_per_mwh_deviation: 500  # ₹/MWh
+    assumed_deviation_pct: 5  # % of energy assumed to deviate
+
+  # Open Access / Cross-Subsidy
+  open_access:
+    enabled: false
+    cross_subsidy_surcharge_per_mwh: 0
+    additional_surcharge_per_mwh: 0

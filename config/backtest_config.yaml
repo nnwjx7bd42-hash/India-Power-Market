@@ -1,0 +1,46 @@
+# ─── Data Paths ───
+data:
+  cleaned_dir: Data/Cleaned
+  features_dir: Data/Features
+  price_file: price/iex_prices_combined_filled.parquet
+  bid_stack_file: bid_stack/iex_aggregate_combined_filled.parquet
+  grid_file: grid/nerldc_national_hourly.parquet
+  weather_file: weather/weather_2022-04-01_to_2025-12-31.parquet
+  holiday_file: Data/Raw/holiday_calendar/indian_holidays.csv
+
+# ─── Temporal Splits ───
+splits:
+  train:
+    start: "2022-04-01"
+    end: "2024-09-30"
+  validation:
+    start: "2024-10-01"
+    end: "2025-01-31"
+  backtest:
+    start: "2025-02-01"
+    end: "2025-06-24"
+
+# ─── Resolution ───
+resolution: hourly
+
+# ─── Markets ───
+markets:
+  - dam
+  - rtm
+
+# ─── Forecast Horizons ───
+forecast_horizons:
+  dam:
+    type: multi_step       # predict 24 values at once
+    steps: 24              # all hours of next day
+    decision_hour: 9       # features available up to D-1 09:00
+    description: "Day-ahead batch: predict 24 hourly MCPs for day D using information available at 09:00 on day D-1"
+  rtm:
+    type: single_step      # predict 1 value at a time
+    steps: 1
+    lead_time_hours: 1     # features available up to hour H-1
+    description: "Real-time rolling: predict MCP for hour H using information available at hour H-1"
+
+# ─── Warmup ───
+warmup:
+  drop_first_hours: 168    # 1-week lag warmup

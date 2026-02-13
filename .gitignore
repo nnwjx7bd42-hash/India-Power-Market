@@ -1,0 +1,41 @@
+# Data sourcing & cleaning scripts (not part of the model codebase)
+data_sourcing/
+
+# Raw data and metadata (large files, not tracked)
+Data/Raw/
+Data/metadata/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.egg
+dist/
+build/
+*.so
+
+# Virtual environment
+venv/
+.venv/
+
+# IDE
+.cursor/
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Environment files
+.env
+.env.local
+models/
+Data/Features/
+Data/Predictions/
+results/

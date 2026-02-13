@@ -1,0 +1,11 @@
+# BESS Physical Parameters
+p_max_mw: 50.0
+e_max_mwh: 180.0
+e_min_mwh: 20.0
+eta_charge: 0.9487
+eta_discharge: 0.9487
+soc_initial_mwh: 100.0
+soc_terminal_min_mwh: 100.0
+degradation_cost_rs_mwh: 650.0 # Real throughput cost
+iex_fee_rs_mwh: 200.0         # 2 paise/kWh transaction fee
+max_cycles_per_day: null      # Merchant mode (unconstrained)

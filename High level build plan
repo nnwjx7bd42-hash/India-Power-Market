@@ -1,0 +1,635 @@
+You're right to ask me to decide the forecast horizon — it's completely determined by the market rules you already chose. Let me lay that out, then give you the final Cursor brief.
+
+## Forecast Horizon — Forced by Market Structure
+
+| Market | When BESS Must Commit | What It Needs | → Forecast Horizon |
+|:--|:--|:--|:--|
+| **DAM** | Bids by 10:00 AM day D-1 | All 24 prices for day D | **24-step batch** (features from D-1 ≤ 09:00) |
+| **RTM** | Gate closure ~45 min before delivery | Price for next hour | **1-step rolling** (features from hour H-1) |
+
+This means **two separate models**, because the information sets available at decision time are completely different. The DAM model sees only yesterday's data. The RTM model sees everything up to the current hour — including today's DAM results (published by 13:00), which is a real informational advantage.
+
+### Why This Creates a Two-Stage BESS Decision
+
+The optimizer can't independently "pick DAM or RTM" each hour. It's sequential:
+
+1. **Stage 1** (D-1 morning): Use DAM forecast → commit a 24-hour charge/discharge schedule
+2. **Stage 2** (day-D, rolling hourly): Use RTM forecast → adjust around the DAM commitment
+
+The perfect foresight benchmark makes the **same two-stage decision** with actual prices — giving you a clean apples-to-apples revenue capture ratio.
+
+***
+
+Here's the full Cursor plan. Paste it directly:
+
+***
+
+```
+# Phase 2: Feature Engineering + Pipeline Infrastructure
+
+## Context (Read First)
+
+Project: IEX India Price Forecasting + BESS Revenue Optimization Backtest
+Root: /Users/chayanvohra/Clean Build VPP/
+Python: ./venv/bin/python (3.14)
+
+Historical backtest only — NOT live. Train price forecasters, hold out
+final ~5 months, run BESS optimizer on predicted vs actual prices.
+
+Phase 1 (data cleanup) is complete. Gate check passes:
+  ./venv/bin/python scripts/validate_alignment.py → exit 0
+
+Decisions locked:
+  - Resolution: HOURLY
+  - Markets: DAM + RTM separately, BESS coordinates across both
+  - DAM forecast: 24-step batch (predict all of tomorrow, decided at 09:00 D-1)
+  - RTM forecast: 1-step rolling (predict next hour, decided at hour H)
+  - BESS params: configurable YAML with market participation rules
+  - Benchmark: perfect foresight comparison
+  - Two-stage optimizer: Stage 1 DAM commitment, Stage 2 RTM adjustment
+
+IMPORTANT: Build feature engineering pipeline + config files + data loader
++ stubs/interfaces for model and optimizer. DO NOT implement model training
+logic, optimizer math, or backtest runner internals yet — methodology is
+not finalized for those. Build the scaffolding so that when we do finalize,
+Cursor only needs to fill in the implementations.
+
+
+## Data Split (in config, not hardcoded)
+
+TRAIN:      2022-04-01 → 2024-09-30  (~913 days)
+VALIDATION: 2024-10-01 → 2025-01-31  (~123 days)
+BACKTEST:   2025-02-01 → 2025-06-24  (~144 days)
+
+Backtest window must NEVER be seen during training or validation.
+
+
+## Directory Structure to Create
+
+Clean Build VPP/
+├── config/
+│   ├── backtest_config.yaml         ← NEW: split dates, resolution, horizons
+│   └── bess_config.yaml             ← NEW: battery physical + market rules
+├── src/
+│   ├── __init__.py
+│   ├── data/
+│   │   ├── __init__.py
+│   │   ├── loader.py                ← loads cleaned parquets, aggregates to hourly
+│   │   └── splits.py                ← train/val/backtest split logic with anti-leakage
+│   ├── features/
+│   │   ├── __init__.py
+│   │   ├── price_features.py        ← lagged MCP, rolling stats, cross-market spread
+│   │   ├── bid_stack_features.py    ← microstructure from 12 price bands
+│   │   ├── grid_features.py         ← net demand, solar ramp, thermal utilization
+│   │   ├── weather_features.py      ← demand-weighted temp, CDD, radiation, wind
+│   │   ├── calendar_features.py     ← hour, dow, month, holiday, monsoon flags
+│   │   └── pipeline.py              ← orchestrates all modules, enforces temporal cutoffs
+│   ├── models/                      ← STUB ONLY — interfaces, no training logic
+│   │   ├── __init__.py
+│   │   └── base_forecaster.py       ← abstract base with fit/predict/evaluate interface
+│   ├── optimizer/                   ← STUB ONLY — interfaces, no optimization math
+│   │   ├── __init__.py
+│   │   └── bess_optimizer.py        ← loads YAML, defines DispatchSchedule dataclass
+│   └── backtest/                    ← STUB ONLY — interfaces, no runner logic
+│       ├── __init__.py
+│       └── metrics.py               ← revenue capture ratio, MAPE, RMSE functions
+├── scripts/
+│   ├── validate_alignment.py        ← EXISTS (Phase 1)
+│   ├── build_features.py            ← NEW: CLI to run feature pipeline
+│   └── validate_features.py         ← NEW: checks feature matrix integrity
+├── Data/
+│   ├── Cleaned/                     ← EXISTS
+│   └── Features/                    ← NEW: output feature parquets
+├── models/                          ← NEW: empty, for future saved models
+├── results/                         ← NEW: empty, for future backtest outputs
+└── requirements.txt                 ← UPDATE
+
+
+## Task 1: config/backtest_config.yaml
+
+```yaml
+# ─── Data Paths ───
+data:
+  cleaned_dir: Data/Cleaned
+  features_dir: Data/Features
+  price_file: price/iex_prices_combined_filled.parquet
+  bid_stack_file: bid_stack/iex_aggregate_combined_filled.parquet
+  grid_file: grid/nerldc_national_hourly.parquet
+  weather_file: weather/weather_2022-04-01_to_2025-12-31.parquet
+  holiday_file: Data/Raw/holiday_calendar/indian_holidays.csv
+
+# ─── Temporal Splits ───
+splits:
+  train:
+    start: "2022-04-01"
+    end: "2024-09-30"
+  validation:
+    start: "2024-10-01"
+    end: "2025-01-31"
+  backtest:
+    start: "2025-02-01"
+    end: "2025-06-24"
+
+# ─── Resolution ───
+resolution: hourly
+
+# ─── Markets ───
+markets:
+  - dam
+  - rtm
+
+# ─── Forecast Horizons ───
+forecast_horizons:
+  dam:
+    type: multi_step       # predict 24 values at once
+    steps: 24              # all hours of next day
+    decision_hour: 9       # features available up to D-1 09:00
+    description: "Day-ahead batch: predict 24 hourly MCPs for day D using
+                  information available at 09:00 on day D-1"
+  rtm:
+    type: single_step      # predict 1 value at a time
+    steps: 1
+    lead_time_hours: 1     # features available up to hour H-1
+    description: "Real-time rolling: predict MCP for hour H using
+                  information available at hour H-1"
+```
+
+
+## Task 2: config/bess_config.yaml
+
+```yaml
+# ─── Battery Physical Parameters ───
+battery:
+  capacity_mwh: 200.0            # Total energy storage
+  power_rating_mw: 100.0         # Max charge/discharge rate
+  round_trip_efficiency: 0.85    # 85% AC-to-AC round-trip
+  # One-way efficiencies derived: sqrt(0.85) ≈ 0.9220
+  min_soc: 0.10                  # Minimum state of charge (fraction)
+  max_soc: 0.90                  # Maximum state of charge (fraction)
+  initial_soc: 0.50              # Starting SoC at beginning of backtest
+
+# ─── Degradation (optional) ───
+degradation:
+  enabled: false
+  max_cycles_per_day: 2
+  cycle_cost_rs_per_mwh: 0       # ₹/MWh penalty per cycle
+
+# ─── Market Participation Rules ───
+market_rules:
+  dam:
+    enabled: true
+    # DAM auction timing
+    bid_deadline_hour: 10        # Bids close 10:00 AM on D-1
+    results_available_hour: 13   # DAM prices published ~13:00 on D-1
+    delivery_day_offset: 1       # Delivery is next day (D)
+    delivery_hours:       # All 24 hours [insightaceanalytic](https://www.insightaceanalytic.com/report/containerized-battery-energy-storage-system-market/3310)
+    # DAM schedule is binding once committed
+    commitment: binding
+    # Price bounds (from data)
+    price_floor_rs_mwh: 0.0
+    price_ceiling_rs_mwh: 20000.0
+
+  rtm:
+    enabled: true
+    # RTM timing
+    gate_closure_minutes: 45     # 45 min before delivery
+    # RTM is flexible — can adjust around DAM commitment
+    commitment: flexible
+    # Price bounds (from data)
+    price_floor_rs_mwh: 0.0
+    price_ceiling_rs_mwh: 16744.25
+
+# ─── Optimizer Strategy ───
+optimizer:
+  strategy: two_stage
+  # Stage 1: Commit DAM schedule using DAM price forecast (24h)
+  # Stage 2: Adjust via RTM using RTM price forecast (rolling 1h)
+  # For perfect foresight: same two-stage logic with actual prices
+  allow_rtm_override_of_dam: true   # Can RTM trades adjust DAM positions?
+  settlement: simple                # Revenue = Σ(discharge×price) - Σ(charge×price)
+```
+
+
+## Task 3: src/data/loader.py
+
+Purpose: Single entry point for loading cleaned parquets and aggregating
+to hourly resolution.
+
+Load config from config/backtest_config.yaml
+
+Aggregation logic:
+  PRICES (15-min → hourly):
+    Group by (date, market, hour) where hour = delivery_start_ist.dt.hour
+    - mcp_rs_mwh: volume-weighted mean → sum(mcp × mcv) / sum(mcv)
+      If sum(mcv) == 0 for an hour, fall back to simple mean
+    - mcv_mwh: SUM (total cleared volume in the hour)
+    - purchase_bid_mwh: SUM
+    - sell_bid_mwh: SUM
+    - weighted_mcp_rs_mwh: MEAN
+    - final_scheduled_volume_mwh: SUM
+    Output: one row per (date, market, hour) with delivery_start_ist as
+    IST-aware timestamp at the top of each hour
+
+  BID STACK (15-min × 12 bands → hourly × 12 bands):
+    Group by (date, market, hour, price_band_rs_mwh)
+    - buy_demand_mw: MEAN across 4 blocks in the hour
+    - sell_supply_mw: MEAN across 4 blocks in the hour
+    Output: one row per (date, market, hour, price_band)
+
+  GRID: already hourly, passthrough. Ensure delivery_start_ist is the
+    join key (IST-aware).
+
+  WEATHER: aggregate 5 cities → national values:
+    - national_temperature = Σ(city_temp × weight)
+    - national_shortwave = Σ(city_radiation × weight)
+    - national_cloud_cover = Σ(city_cloud × weight)
+    - delhi_temperature = Delhi row only (largest demand center)
+    - chennai_wind_speed = Chennai row only (wind corridor)
+    - national_humidity = Σ(city_humidity × weight)
+    Output: one row per hour with all national weather features
+    Join key: delivery_start_ist
+
+  HOLIDAYS: load CSV, parse date column. Output: list of holiday dates.
+
+Return: dict with keys 'price', 'bid_stack', 'grid', 'weather', 'holidays'
+  Each is a pandas DataFrame at hourly resolution (except holidays = list)
+
+IMPORTANT: All DataFrames must have delivery_start_ist as IST-aware
+datetime column for joins. Grid already has it. Prices get it from
+aggregation. Weather already has it (after Phase 1 fix).
+
+
+## Task 4: src/data/splits.py
+
+Purpose: Apply temporal splits with strict anti-leakage guarantees.
+
+Functions:
+  split_by_date(df, config, date_column='date') → dict of DataFrames
+    Returns {"train": df_train, "val": df_val, "backtest": df_backtest}
+    Filters on the date column using ranges from config/backtest_config.yaml
+
+  validate_no_leakage(splits_dict):
+    Assert: max(train dates) < min(val dates) < min(backtest dates)
+    Assert: no date appears in more than one split
+    Print date ranges and row counts
+
+This module does DATE-LEVEL splitting only. The forecast-horizon-specific
+temporal cutoffs (DAM uses D-1 09:00, RTM uses H-1) are handled in the
+feature pipeline, NOT here.
+
+
+## Task 5: src/features/price_features.py
+
+Function: build_price_features(prices_df, market) → DataFrame
+
+Input: hourly aggregated prices for one market
+Output: DataFrame with one row per (date, hour), feature columns only
+
+Features:
+  # Autoregressive lags (backward-looking, no leakage)
+  mcp_lag_1h            MCP at t-1
+  mcp_lag_2h            MCP at t-2
+  mcp_lag_4h            MCP at t-4
+  mcp_lag_24h           MCP at t-24 (same hour yesterday)
+  mcp_lag_168h          MCP at t-168 (same hour last week)
+
+  # Rolling stats (backward-looking windows)
+  mcp_rolling_mean_24h  mean over past 24 hours
+  mcp_rolling_std_24h   std over past 24 hours
+  mcp_rolling_mean_168h mean over past 168 hours (1 week)
+
+  # Volume
+  mcv_lag_1h            cleared volume at t-1
+  mcv_rolling_mean_24h  rolling mean volume
+
+  # Bid pressure
+  bid_ratio_lag_1h      purchase_bid(t-1) / sell_bid(t-1)
+
+Note: Cross-market spread (DAM-RTM) is built in pipeline.py where both
+markets' data is available.
+
+All lags use .shift() on time-sorted data. min_periods enforced on rolling.
+
+
+## Task 6: src/features/bid_stack_features.py
+
+Function: build_bid_stack_features(bid_stack_df, market) → DataFrame
+
+Input: hourly aggregated bid stack for one market (12 bands per hour)
+Output: DataFrame with one row per (date, hour), feature columns only
+
+First aggregate across the 12 price bands per (date, hour):
+  total_buy_demand_mw       sum of buy_demand across all 12 bands
+  total_sell_supply_mw      sum of sell_supply across all 12 bands
+  buy_sell_ratio            total_buy / total_sell (>1 = demand pressure)
+
+  # Market tightness
+  supply_margin_mw          sell_supply in bands ≥ Rs 8001/MWh
+                            (expensive capacity still available)
+  cheap_supply_mw           sell_supply in bands 0-3000
+  cheap_supply_share        cheap_supply / total_sell
+
+  # Bid concentration (Herfindahl)
+  buy_hhi                   Σ((band_buy / total_buy)²) across 12 bands
+  sell_hhi                  Σ((band_sell / total_sell)²) across 12 bands
+
+Then apply lags (same rules as price features — shift by 1 for RTM,
+by appropriate offset for DAM).
+
+
+## Task 7: src/features/grid_features.py
+
+Function: build_grid_features(grid_df) → DataFrame
+
+Input: hourly grid data
+Output: DataFrame with one row per hour
+
+Features:
+  # Direct passthrough
+  all_india_demand_mw       raw demand
+  net_demand_mw             demand - solar - wind (PRIMARY feature)
+  all_india_solar_mw        solar generation
+  all_india_wind_mw         wind generation
+  total_generation_mw       total gen
+  fuel_mix_imputed          boolean flag (pass through)
+
+  # Derived
+  net_demand_delta_1h       net_demand(t) - net_demand(t-1)
+  net_demand_lag_24h        net demand same hour yesterday
+  solar_ramp_1h             solar(t) - solar(t-1)  — evening ramp signal
+  demand_generation_gap     demand - total_generation (deficit = price up)
+  thermal_utilization       total_thermal / 180000  (180 GW approx capacity)
+  renewable_share           (solar + wind) / demand
+
+
+## Task 8: src/features/weather_features.py
+
+Function: build_weather_features(weather_df) → DataFrame
+
+Input: national aggregated weather (from loader, already weighted)
+Output: DataFrame with one row per hour
+
+Features:
+  national_temperature      already aggregated in loader
+  delhi_temperature         already extracted in loader
+  cooling_degree_hours      max(0, national_temperature - 24)
+  national_shortwave        already aggregated
+  chennai_wind_speed        already extracted
+  national_cloud_cover      already aggregated
+
+  # Derived
+  temperature_lag_24h       national temp same hour yesterday
+  shortwave_delta_1h        radiation change (solar ramp from weather side)
+  temperature_spread        delhi_temp - national_temp (heat localization)
+  heat_index                national_temp × (national_humidity / 100)
+
+
+## Task 9: src/features/calendar_features.py
+
+Function: build_calendar_features(timestamps, holidays_df) → DataFrame
+
+Input: Series of delivery_start_ist timestamps + holiday date list
+Output: DataFrame with one row per timestamp
+
+Features:
+  hour_of_day              0-23
+  day_of_week              0=Mon, 6=Sun
+  month                    1-12
+  quarter                  1-4
+  is_weekend               bool (Sat=5, Sun=6)
+  is_holiday               bool (date in holiday list)
+  is_monsoon               bool (Jun 15 to Sep 30)
+  days_to_nearest_holiday  int (min absolute distance to any holiday)
+
+  # Cyclical encoding
+  hour_sin                 sin(2π × hour / 24)
+  hour_cos                 cos(2π × hour / 24)
+  month_sin                sin(2π × (month - 1) / 12)
+  month_cos                cos(2π × (month - 1) / 12)
+
+
+## Task 10: src/features/pipeline.py
+
+Purpose: Orchestrates all feature modules. Builds the complete feature
+matrix for DAM and RTM, enforcing temporal causality.
+
+Function: build_all_features(config_path) → saves parquets
+
+Logic:
+  1. Load config (backtest_config.yaml)
+  2. Load + aggregate data via loader.py
+  3. For each market in [dam, rtm]:
+     a. Build price features for this market
+     b. Build bid stack features for this market
+     c. Build grid features
+     d. Build weather features
+     e. Build calendar features
+     f. Build cross-market features:
+        - dam_rtm_spread_lag_1h: DAM_mcp(t-1) - RTM_mcp(t-1)
+        - For RTM model: dam_mcp_same_hour (known after 13:00 on D-1,
+          available for all hours on day D)
+     g. Join all on delivery_start_ist (inner join)
+     h. Add target column: mcp_rs_mwh (actual price for this hour+market)
+     i. ENFORCE TEMPORAL CAUSALITY:
+        FOR DAM:
+          The feature row for (target_date=D, target_hour=H) must only
+          use data available at D-1 09:00. In practice:
+          - Lag features: all already lagged by ≥1h via .shift()
+          - Additional constraint: for target date D, features come from
+            data up to D-1 09:00. This means:
+            * mcp_lag_1h for DAM day D hour 0 = MCP at D-1 hour 8
+              (since decision is at hour 9, latest available is hour 8)
+            * All 24 target hours of day D share the SAME lag features
+              (all computed from D-1 09:00 snapshot)
+            * EXCEPT: calendar features (hour_of_day etc.) differ per
+              target hour — they describe the hour being predicted
+            * EXCEPT: same-hour-yesterday features differ per target hour
+              (hour 0 uses D-1 hour 0, hour 12 uses D-1 hour 12, etc.)
+              BUT these must still be from D-1 or earlier
+          Implementation: For each target_date D, build a "snapshot" of
+          all feature values as of D-1 09:00. Then create 24 rows
+          (one per target hour) with:
+            - Shared features: snapshot values (price lags, grid, weather,
+              bid stack — all from D-1 ≤ 09:00)
+            - Per-hour features: hour_of_day, cyclical encodings,
+              same-hour-yesterday MCP (D-1 hour H)
+
+        FOR RTM:
+          Standard 1-step lag. Features for hour H use data up to H-1.
+          All .shift(1) operations on time-sorted data handle this.
+          No special snapshot logic needed.
+
+     j. Drop rows with NaN from lag warmup (first 168 rows = 1 week)
+     k. Split by date into train/val/backtest
+     l. Save:
+        Data/Features/dam_features_train.parquet
+        Data/Features/dam_features_val.parquet
+        Data/Features/dam_features_backtest.parquet
+        Data/Features/rtm_features_train.parquet
+        Data/Features/rtm_features_val.parquet
+        Data/Features/rtm_features_backtest.parquet
+
+  Each output parquet: one row per (date, hour) with all feature columns
+  + target column (mcp_rs_mwh). Ready for direct model ingestion.
+
+
+## Task 11: scripts/build_features.py
+
+CLI script:
+  python scripts/build_features.py [--config config/backtest_config.yaml]
+
+Calls pipeline.build_all_features(), prints summary:
+  - Number of features per market
+  - Row counts per split
+  - Date ranges per split
+  - NaN audit (should be zero after warmup drop)
+  - Feature value ranges (min/max sanity check)
+
+
+## Task 12: scripts/validate_features.py
+
+CLI script — gate check for feature matrices:
+  - Loads all 6 feature parquets
+  - Asserts zero NaN in any column
+  - Asserts no date leakage: max(train dates) < min(val dates) < min(backtest dates)
+  - For DAM: asserts that for any target_date D, no feature value
+    is derived from data on or after D (anti-leakage check)
+  - Asserts target column (mcp_rs_mwh) is present and non-null
+  - Prints feature matrix shapes
+  - exit(0) on pass, exit(1) on fail
+
+
+## Task 13: Stub Files (interfaces only, NO implementation)
+
+### src/models/base_forecaster.py
+```python
+from abc import ABC, abstractmethod
+
+class BaseForecaster(ABC):
+    @abstractmethod
+    def fit(self, X_train, y_train, X_val, y_val): ...
+
+    @abstractmethod
+    def predict(self, X): ...
+
+    @abstractmethod
+    def evaluate(self, X, y) -> dict: ...
+
+    @abstractmethod
+    def save(self, path): ...
+
+    @classmethod
+    @abstractmethod
+    def load(cls, path): ...
+```
+
+### src/optimizer/bess_optimizer.py
+```python
+from dataclasses import dataclass
+
+@dataclass
+class HourlyAction:
+    hour: int
+    market: str       # 'dam', 'rtm', or 'idle'
+    action: str       # 'charge', 'discharge', 'idle'
+    power_mw: float
+    energy_mwh: float
+    price_rs_mwh: float
+    revenue_rs: float
+    soc_after: float
+
+@dataclass
+class DispatchSchedule:
+    date: object       # datetime.date
+    hourly_actions: list  # list[HourlyAction], 24 elements
+    total_revenue_rs: float
+    energy_charged_mwh: float
+    energy_discharged_mwh: float
+    cycles: float
+    final_soc: float
+
+class BESSOptimizer:
+    def __init__(self, config_path: str):
+        """Load bess_config.yaml, initialize battery state."""
+        raise NotImplementedError("Phase 3")
+
+    def optimize_day(self, dam_prices, rtm_prices, date) -> DispatchSchedule:
+        """Two-stage optimization: DAM commitment + RTM adjustment."""
+        raise NotImplementedError("Phase 3")
+```
+
+### src/backtest/metrics.py
+Implement these fully (they're just math, no methodology dependency):
+```python
+import numpy as np
+
+def mape(y_true, y_pred):
+    mask = y_true != 0
+    return np.mean(np.abs((y_true[mask] - y_pred[mask]) / y_true[mask])) * 100
+
+def rmse(y_true, y_pred):
+    return np.sqrt(np.mean((y_true - y_pred) ** 2))
+
+def mae(y_true, y_pred):
+    return np.mean(np.abs(y_true - y_pred))
+
+def capture_ratio(forecast_revenue, perfect_foresight_revenue):
+    if perfect_foresight_revenue == 0:
+        return 0.0
+    return forecast_revenue / perfect_foresight_revenue
+
+def directional_accuracy(y_true, y_pred):
+    true_diff = np.diff(y_true)
+    pred_diff = np.diff(y_pred)
+    return np.mean(np.sign(true_diff) == np.sign(pred_diff)) * 100
+```
+
+
+## Task 14: Update .gitignore
+
+Add:
+  Data/Features/
+  models/
+  results/
+
+These are large and reproducible. Config + src + scripts stay tracked.
+
+
+## Task 15: Update requirements.txt
+
+Add:
+  pyyaml>=6.0
+  scikit-learn>=1.4.0
+
+Do NOT add lightgbm, optuna, cvxpy yet — those are Phase 3.
+
+
+## Execution Order
+
+1. Create directory structure (config/, src/, Data/Features/, models/, results/)
+2. Write config YAMLs (Tasks 1-2)
+3. Write src/data/loader.py (Task 3) and src/data/splits.py (Task 4)
+4. Write all feature modules (Tasks 5-9)
+5. Write pipeline orchestrator (Task 10)
+6. Write CLI scripts (Tasks 11-12)
+7. Write stub files (Task 13)
+8. Write metrics module (Task 13 — metrics.py is fully implemented)
+9. Update .gitignore and requirements.txt (Tasks 14-15)
+10. Run: python scripts/build_features.py
+11. Run: python scripts/validate_features.py
+12. STOP — report feature shapes and value ranges back before Phase 3
+
+
+## DO NOT Build Yet (Phase 3 — Pending)
+
+- DAM forecaster (LightGBM multi-step)
+- RTM forecaster (LightGBM rolling)
+- BESS two-stage optimizer internals
+- Backtest runner
+- Hyperparameter tuning
+- Evaluation / visualization
+```
+
+***
+
+The key architectural decision all three models in my council agreed on: **the DAM model's "snapshot at D-1 09:00" temporal cutoff is the hardest part of the feature pipeline.** All 24 target hours for day D share the same snapshot features (yesterday's price lags, grid state, weather, bid stack), with only the target hour and its same-hour-yesterday values varying per row. Get that right and everything downstream is clean. Get it wrong and you have future leakage in every DAM prediction.

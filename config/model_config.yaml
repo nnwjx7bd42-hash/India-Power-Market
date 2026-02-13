@@ -1,0 +1,56 @@
+target:
+  transform: log1p
+  column: target_mcp_rs_mwh
+
+baselines:
+  dam: mcp_same_hour_yesterday
+  rtm: mcp_lag_1h
+
+lgbm_defaults:
+  num_leaves: 127
+  learning_rate: 0.05
+  n_estimators: 2000
+  min_child_samples: 50
+  feature_fraction: 0.8
+  bagging_fraction: 0.8
+  bagging_freq: 5
+  reg_alpha: 0.1
+  reg_lambda: 1.0
+  early_stopping_rounds: 50
+  verbose: -1
+
+tuning:
+  enabled: true
+  n_trials: 50
+  search_space:
+    num_leaves: [31, 255]
+    learning_rate: [0.01, 0.1]
+    min_child_samples: [20, 100]
+    feature_fraction: [0.5, 0.9]
+    bagging_fraction: [0.5, 0.9]
+    reg_alpha: [0.001, 10.0]
+    reg_lambda: [0.001, 10.0]
+    n_estimators: 3000
+    early_stopping_rounds: 50
+
+quantiles: [0.10, 0.25, 0.50, 0.75, 0.90]
+
+scenarios:
+  dam:
+    method: gaussian_copula
+    n_scenarios: 200
+    seed: 42
+  rtm:
+    method: autoregressive_rollout
+    n_scenarios: 200
+    n_steps: 24
+    seed: 42
+    updatable_features:
+      - mcp_lag_1h
+      - mcp_lag_2h
+      - mcp_lag_4h
+
+paths:
+  models_dir: models
+  predictions_dir: Data/Predictions
+  results_dir: results

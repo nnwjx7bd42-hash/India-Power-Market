@@ -1,0 +1,11 @@
+cvar:
+  alpha: 0.05              # tail fraction (worst 5% of scenarios = CVaR₉₅)
+  lambda_values: [0, 0.01, 0.05, 0.1, 0.3, 0.5]
+
+  # Objective: maximize E[R] + λ × CVaR_α(R)
+  # λ=0 → pure expected value (must reproduce Phase 3D exactly)
+  # λ>0 → penalizes low-revenue scenarios, trades total revenue for tail protection
+
+phase3d_baseline:
+  net_revenue_m: 198.17    # Updated to match refined Phase 4 solver baseline
+  regression_tolerance_pct: 0.1
