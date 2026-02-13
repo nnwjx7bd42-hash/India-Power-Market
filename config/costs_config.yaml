@@ -20,7 +20,7 @@ costs:
   ists_charges:
     enabled: false
     charge_per_mwh: 0
-    waiver: true  # Co-located BESS commissioned by June 2028
+    waiver: true  # Standalone merchant BESS — ISTS waiver assumed (policy-dependent)
 
   # DSM Penalties (CERC DSM Regs 2024)
   dsm_penalties:
