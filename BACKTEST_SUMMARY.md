@@ -11,10 +11,10 @@ All results represent **actual realized performance** against historical market 
 - **Total Realized Net Revenue**: **₹132,449,653**
 - **Average Daily Revenue**: ₹926,221
 - **Median Day Revenue**: ₹845,316
-- **Total Net Revenue (143 Days):** **₹197.8M** (Regulatory Compliant P&L)
+- **Total Net Revenue (143 Days):** **₹198.08M** (CERC 2024 Regulatory Compliant P&L)
 - **Net Unit Economics:** **~₹1.7M/MWh-cap/year**
 - **Worst-Day Outcome:** **+₹2.7K** (Confirmed profit floor)
-- **Capture Ratio:** **82.3%** relative to perfect foresight
+- **Capture Ratio:** **78.9%** relative to perfect foresight (net-cost basis)
 ![Cumulative Revenue](results/charts/cumulative_revenue.png)
 *Cumulative net revenue tracking over the 143-day backtest period.*
 
@@ -49,12 +49,12 @@ To evaluate the efficiency of the Two-Stage Stochastic Program, we compare the r
 
 | Line Item | Value (Total) | % of Gross | Description |
 | :--- | :--- | :--- | :--- |
-| **Gross Arbitrage Revenue** | **₹236.28M** | 100% | Realized IEX Revenue (DAM + RTM) |
-| Transaction Fees (IEX) | -₹11.66M | 4.9% | CERC Reg 23 capped at ₹200/MWh |
-| Scheduling Charges | -₹0.39M | 0.2% | NLDC/RLDC Scheduling (Post-ISTS waiver) |
-| Degradation Loss | -₹17.95M | 7.6% | Cycle-based cell wear (₹650/MWh) |
-| DSM Penalties | **-₹8.47M** | 3.6% | CERC DSM 2024 (3% physical error basis) |
-| **Total Net Revenue** | **₹197.82M** | **83.7%** | **Final Operating Profit** |
+| **Gross Arbitrage Revenue** | **₹234.28M** | 100% | Realized IEX Revenue (DAM + RTM) |
+| Transaction Fees (IEX) | -₹10.95M | 4.7% | CERC Reg 23 capped at ₹200/MWh |
+| Scheduling Charges | -₹0.38M | 0.2% | NLDC/RLDC Scheduling (Post-ISTS waiver) |
+| Degradation Loss | -₹16.86M | 7.2% | Cycle-based cell wear (₹650/MWh) |
+| DSM Penalties | **-₹8.01M** | 3.4% | CERC DSM 2024 (3% physical error × block-wise NR) |
+| **Total Net Revenue** | **₹198.08M** | **84.5%** | **Final Operating Profit** |
 
 ---
 

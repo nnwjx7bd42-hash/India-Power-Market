@@ -45,10 +45,13 @@ def evaluate_actuals(bess_params, dam_schedule, dam_actual, rtm_actual, cost_mod
     # Revenue Calculation: R = sum( p_dam * x + p_rtm * (y - x) )
     revenue = pulp.lpSum([(dam_actual[t] - rtm_actual[t]) * dam_schedule[t] + rtm_actual[t] * y[t] for t in range(24)])
     
-    # Costs (Legacy simple model - for LP objective only)
-    # The actual backtest metrics use the pluggable CostModel below
+    # Costs — must mirror the planning LP in TwoStageBESS.solve()
     fees = bess_params.iex_fee_rs_mwh * pulp.lpSum([y_c[t] + y_d[t] for t in range(24)])
     degradation = bess_params.degradation_cost_rs_mwh * pulp.lpSum([y_d[t] for t in range(24)])
+    
+    # Fix #1: DSM Friction Proxy (CERC 2024) — matches planning stage
+    # 3% physical error * ₹4500 Normal Rate = ₹135/MWh throughput friction
+    dsm_friction = 135.0 * pulp.lpSum([y_c[t] + y_d[t] for t in range(24)])
     
     # Deviation auxiliary variables for λ penalty
     dev = pulp.LpVariable.dicts("dev", range(24), lowBound=0)
@@ -56,7 +59,7 @@ def evaluate_actuals(bess_params, dam_schedule, dam_actual, rtm_actual, cost_mod
         prob += dev[t] >= y[t] - dam_schedule[t]
         prob += dev[t] >= dam_schedule[t] - y[t]
         
-    prob.objective = revenue - fees - degradation - lambda_dev * pulp.lpSum([dev[t] for t in range(24)])
+    prob.objective = revenue - fees - degradation - dsm_friction - lambda_dev * pulp.lpSum([dev[t] for t in range(24)])
     
     solver = pulp.PULP_CBC_CMD(msg=0)
     prob.solve(solver)
@@ -71,15 +74,15 @@ def evaluate_actuals(bess_params, dam_schedule, dam_actual, rtm_actual, cost_mod
     realized_rev = pulp.value(revenue)
     
     cost_breakdown = None
-    net_revenue = realized_rev - pulp.value(fees + degradation)
+    net_revenue = realized_rev - pulp.value(fees + degradation + dsm_friction)
     
     if cost_model:
-        # Use the advanced cost model for final P&L
-        # Note: scheduling is based on net RTM schedule
+        # Fix #2: Forward actual prices for block-wise NR (not flat fallback)
         cost_breakdown = cost_model.compute_costs(
             charge=charge_array, 
             discharge=discharge_array,
-            scheduled=np.array(dam_schedule)
+            dam_actual=dam_actual,
+            rtm_actual=rtm_actual
         )
         net_revenue = realized_rev - cost_breakdown['total_costs']
 

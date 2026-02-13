@@ -12,6 +12,7 @@ sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 from src.optimizer.bess_params import BESSParams
 from src.optimizer.scenario_loader import ScenarioLoader
+from src.optimizer.costs import CostModel
 from scripts.run_phase3b_backtest import evaluate_actuals
 
 def solve_deterministic(bess_params, dam_scenarios, rtm_scenarios, lambda_dev=0.0):
@@ -42,7 +43,10 @@ def solve_deterministic(bess_params, dam_scenarios, rtm_scenarios, lambda_dev=0.
     prob += soc[24] >= bess_params.soc_terminal_min_mwh
     
     revenue = pulp.lpSum([dam_mean[t] * x[t] + rtm_mean[t] * (y[t] - x[t]) for t in range(24)])
-    prob.objective = revenue - lambda_dev * pulp.lpSum([dev[t] for t in range(24)])
+    fees = bess_params.iex_fee_rs_mwh * pulp.lpSum([y_c[t] + y_d[t] for t in range(24)])
+    degradation = bess_params.degradation_cost_rs_mwh * pulp.lpSum([y_d[t] for t in range(24)])
+    dsm_friction = 135.0 * pulp.lpSum([y_c[t] + y_d[t] for t in range(24)])
+    prob.objective = revenue - fees - degradation - dsm_friction - lambda_dev * pulp.lpSum([dev[t] for t in range(24)])
     
     solver = pulp.PULP_CBC_CMD(msg=0)
     prob.solve(solver)
@@ -71,7 +75,10 @@ def solve_perfect_foresight(bess_params, dam_actual, rtm_actual, lambda_dev=0.0)
     prob += soc[24] >= bess_params.soc_terminal_min_mwh
     
     revenue = pulp.lpSum([dam_actual[t] * x[t] + rtm_actual[t] * (y[t] - x[t]) for t in range(24)])
-    prob.objective = revenue - lambda_dev * pulp.lpSum([dev[t] for t in range(24)])
+    fees = bess_params.iex_fee_rs_mwh * pulp.lpSum([y_c[t] + y_d[t] for t in range(24)])
+    degradation = bess_params.degradation_cost_rs_mwh * pulp.lpSum([y_d[t] for t in range(24)])
+    dsm_friction = 135.0 * pulp.lpSum([y_c[t] + y_d[t] for t in range(24)])
+    prob.objective = revenue - fees - degradation - dsm_friction - lambda_dev * pulp.lpSum([dev[t] for t in range(24)])
     
     solver = pulp.PULP_CBC_CMD(msg=0)
     prob.solve(solver)
@@ -94,6 +101,12 @@ def run_benchmarks():
         actuals_rtm_path=config['paths']['actuals_rtm']
     )
     
+    # Load Cost Model
+    cost_model = None
+    if Path("config/costs_config.yaml").exists():
+        cost_model = CostModel.from_yaml("config/costs_config.yaml")
+        print("Loaded CostModel from config/costs_config.yaml")
+    
     dates = loader.common_dates
     print(f"Comparing benchmarks for {len(dates)} days...")
     
@@ -106,23 +119,30 @@ def run_benchmarks():
         
         # 1. Deterministic Commit
         x_det = solve_deterministic(bess_params, day_data['dam'], day_data['rtm'], lambda_dev=config['lambda_dev'])
-        eval_det = evaluate_actuals(bess_params, x_det, day_data['dam_actual'], day_data['rtm_actual'], lambda_dev=config['lambda_dev'])
+        eval_det = evaluate_actuals(bess_params, x_det, day_data['dam_actual'], day_data['rtm_actual'], cost_model=cost_model, lambda_dev=config['lambda_dev'])
         
         # 2. Perfect Foresight (Upper Bound)
         x_oracle = solve_perfect_foresight(bess_params, day_data['dam_actual'], day_data['rtm_actual'], lambda_dev=config['lambda_dev'])
-        eval_oracle = evaluate_actuals(bess_params, x_oracle, day_data['dam_actual'], day_data['rtm_actual'], lambda_dev=config['lambda_dev'])
+        eval_oracle = evaluate_actuals(bess_params, x_oracle, day_data['dam_actual'], day_data['rtm_actual'], cost_model=cost_model, lambda_dev=config['lambda_dev'])
         
         # 3. Naive (Zero DAM Commitment, purely RTM)
         x_naive = [0.0] * 24
-        eval_naive = evaluate_actuals(bess_params, x_naive, day_data['dam_actual'], day_data['rtm_actual'], lambda_dev=config['lambda_dev'])
+        eval_naive = evaluate_actuals(bess_params, x_naive, day_data['dam_actual'], day_data['rtm_actual'], cost_model=cost_model, lambda_dev=config['lambda_dev'])
         
-        print(f"Naive: ₹{eval_naive['revenue']:,.0f} | Det: ₹{eval_det['revenue']:,.0f} | Oracle: ₹{eval_oracle['revenue']:,.0f}")
+        net_rev_det = eval_det['net_revenue']
+        net_rev_oracle = eval_oracle['net_revenue']
+        net_rev_naive = eval_naive['net_revenue']
+        
+        print(f"Naive: ₹{net_rev_naive:,.0f} | Det: ₹{net_rev_det:,.0f} | Oracle: ₹{net_rev_oracle:,.0f}")
         
         bench_results.append({
             "target_date": date,
             "realized_revenue_naive": eval_naive['revenue'],
             "realized_revenue_det": eval_det['revenue'],
-            "realized_revenue_oracle": eval_oracle['revenue']
+            "realized_revenue_oracle": eval_oracle['revenue'],
+            "net_revenue_naive": net_rev_naive,
+            "net_revenue_det": net_rev_det,
+            "net_revenue_oracle": net_rev_oracle
         })
         
     df = pd.DataFrame(bench_results)

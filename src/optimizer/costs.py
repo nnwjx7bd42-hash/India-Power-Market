@@ -25,15 +25,15 @@ class CostModel:
         return cls(data)
 
     def compute_costs(self, charge: np.ndarray, discharge: np.ndarray,
-                      dam_actual: np.ndarray = None, rtm_actual: np.ndarray = None, 
-                      scheduled: np.ndarray = None) -> dict:
+                      dam_actual: np.ndarray = None, rtm_actual: np.ndarray = None) -> dict:
         """
         Given a 24-hour dispatch schedule, compute all trading and operational costs.
         
         Parameters:
-        - charge: ndarray(24) — MW charged (positive values)
-        - discharge: ndarray(24) — MW discharged (positive values)
-        - scheduled: ndarray(24) — Scheduled volume (for DSM), defaults to actual if None.
+        - charge: ndarray(24) — MW charged per block (positive values)
+        - discharge: ndarray(24) — MW discharged per block (positive values)
+        - dam_actual: ndarray(24) — Actual DAM MCP per block (₹/MWh), for block-wise NR
+        - rtm_actual: ndarray(24) — Actual RTM MCP per block (₹/MWh), for block-wise NR
         """
         energy_charged = np.sum(charge)
         energy_discharged = np.sum(discharge)
