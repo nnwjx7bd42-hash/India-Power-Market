@@ -1,90 +1,77 @@
-# Architecture & Technical Design: BESS Stochastic Optimizer
+# System Architecture: Stochastic BESS Optimizer
 
-This document provides a deep dive into the mathematical framework, statistical models, and software architecture of the GENCO BESS Virtual Power Plant (VPP) system.
+This document details the mathematical framework, statistical methodologies, and design tradeoffs of the BESS Virtual Power Plant (VPP) optimization system.
 
 ---
 
-## 1. Stochastic Optimization Framework
+## 1. Optimization Methodology: Two-Stage Stochastic Programming
 
-The core of the system is a **Two-Stage Stochastic Linear Program (SLP)**. This approach explicitly models the decision-making process under uncertainty by splitting variables into those that must be decided "now" (Stage 1) and those that can wait until uncertainty is resolved (Stage 2).
+The core decision engine is modeled as a **Two-Stage Stochastic Program (SP)** with recourse. This framework allows the optimizer to make robust commitments in the Day-Ahead Market (DAM) while anticipating the flexibility of the Real-Time Market (RTM).
 
 ### 1.1 Decision Variables
-- **Stage 1 (Day-Ahead Market):** 
-    - $x_{c,t}, x_{d,t} \in [0, P_{\max}]$ : Charging and discharging power committed to the DAM for hour $t$. 
-    - These variables are **non-anticipative**, meaning they are identical across all scenarios $s$.
-- **Stage 2 (Real-Time Market):**
-    - $y_{s,c,t}, y_{s,d,t} \in [0, P_{\max}]$ : Actual physical dispatch in scenario $s$ at hour $t$.
-    - These represent the "recourse" actions taken after RTM prices are observed.
-- **State Variables:**
-    - $E_{s,t}$ : Energy Level (SoC) of the battery in scenario $s$ at the end of hour $t$.
+- **Stage 1 (DAM):** $x_{c,t}, x_{d,t} \in [0, P_{\max}]$ : Non-anticipative charge/discharge commitments. These must be identical across all scenarios $s$.
+- **Stage 2 (RTM):** $y_{s,c,t}, y_{s,d,t} \in [0, P_{\max}]$ : Physical dispatch recourse actions taken after scenario $s$ is realized.
+- **State:** $E_{s,t}$ : State of Charge (SoC) for scenario $s$ at time $t$.
 
 ### 1.2 Mathematical Objective
-The objective function maximizes the risk-adjusted expected net revenue:
+The model maximizes risk-adjusted expected net revenue:
 
-$$\max \quad \frac{1}{S} \sum_{s=1}^S \text{NetRev}_s + \lambda \times \left( \zeta - \frac{1}{S \alpha} \sum_{s=1}^S u_s \right) - \text{StabilityPenalty}$$
+$$\max \quad \mathbb{E}[R_s] + \lambda_{\text{risk}} \cdot \text{CVaR}_{\alpha}(R_s) - \text{Penalty}_{\text{stab}}$$
 
-**Revenue Components per Scenario ($s$):**
-- **Market Revenue:** $\sum_t [ p_{\text{dam},s,t} \cdot (x_{d,t} - x_{c,t}) + p_{\text{rtm},s,t} \cdot ((y_{s,d,t} - y_{s,c,t}) - (x_{d,t} - x_{c,t})) ]$
-- **Transaction Costs:** $C_{\text{iex}} \cdot \sum_t [ (x_{d,t} + x_{c,t}) + \text{abs}((y_{s,d,t} - y_{s,c,t}) - (x_{d,t} - x_{c,t})) ]$
-- **Degradation:** $C_{\text{deg}} \cdot \sum_t y_{s,d,t}$
+Where **Net Revenue ($R_s$)** per scenario is formulated as:
+$$R_s = \sum_t \left[ p_{\text{dam},s,t} \cdot (x_{d,t} - x_{c,t}) + p_{\text{rtm},s,t} \cdot \Delta_{s,t} \right] - \text{Cost}_{\text{iex},s} - \text{Cost}_{\text{deg},s}$$
+
+### 1.3 Linearization of Constraints
+To maintain a Linear Program (LP) solvable by CBC/HiGHS, absolute values in transaction costs are linearized using auxiliary variables:
+- **Deviation**: $\Delta_{s,t} = (y_{s,d,t} - y_{s,c,t}) - (x_{d,t} - x_{c,t})$
+- **Market Churn**: $|\Delta_{s,t}| = \delta_{s,t}^+ + \delta_{s,t}^-$
+- **Stability Penalty**: $\text{Penalty}_{\text{stab}} = \frac{\lambda_{\text{dev}}}{S} \sum_{s,t} (\delta_{s,t}^+ + \delta_{s,t}^-)$
+  - This ensures that when DAM and RTM prices are equal, the system prefers the low-friction Stage 1 commitment.
 
 ---
 
 ## 2. Statistical Pipeline
 
-The quality of the optimization depends entirely on the **Scenario Fan**. We use a multi-layered approach to generate realistic joint price paths.
-
 ### 2.1 Conformal Quantile Regression (CQR)
-Predictive models (LGBM) often suffer from "calibration drift." CQR fixes this by applying a scalar correction $\delta_{\tau}$ to raw quantile predictions:
-$$ q_{\tau, \text{corrected}} = q_{\tau, \text{raw}} - \text{Quantile}_{\tau}(\text{Residuals}_{\text{val}}) $$
-This ensures that the **conditional coverage** matches the nominal target exactly on the validation set.
+Predictive models (LightGBM) often exhibit "tails that are too thin." CQR recalibrates the quantile predictions using a validation residual $\delta_{\tau}$:
+$$ q_{\tau, \text{calibrated}} = q_{\tau, \text{raw}} - \mathcal{Q}_{\tau}\{y_i - \hat{y}_i\} $$
+Where residuals are defined as $e = y_{\text{actual}} - y_{\text{predicted}}$. This ensures the **empirical coverage** matches the nominal target $\tau$ exactly.
 
-### 2.2 Joint Copula Coupling
-To capture the correlation between DAM and RTM prices, we use a **Gaussian Copula**:
-1.  **Uniform Mapping**: Convert price scenarios to uniform space $U \in [0, 1]^{24}$ using the Inverse CDF (PIT).
-2.  **Latent Correlation**: Map uniforms to standard normal space $Z = \Phi^{-1}(U)$.
-3.  **DAM Temporal Structure**: $Z_{\text{dam}} = L \cdot \epsilon$, where $L$ is the Cholesky factor of the DAM hourly correlation matrix.
-4.  **Cross-Market Dependency**: $Z_{\text{rtm},h} = \rho_h Z_{\text{dam},h} + \sqrt{1-\rho_h^2} \epsilon_h$.
+### 2.2 Joint Scenario Generation (Gaussian Copula)
+To capture cross-market correlations ($\rho_{dam,rtm}$), we use a Gaussian Copula:
+1. **Marginals**: Quantile LightGBM models predict the price distributions per hour.
+2. **Correlation**: A covariance matrix is estimated between market residuals.
+3. **Sampling**: 200 joint-correlated paths are sampled while preserving the temporal structure of the DAM.
 
 ---
 
-## 3. Module Architecture
+## 3. Design Tradeoffs
 
-The codebase is structured into self-contained modules:
-
-| Module | Responsibility | Key Classes/Functions |
+| Choice | Alternative | Rationale |
 | :--- | :--- | :--- |
-| `src.features` | IEX feature engineering, lags, and rolling stats. | `FeatureEngineer` |
-| `src.forecasting` | Quantile regression models and CQR engine. | `QuantileLGBM`, `compute_cqr_corrections` |
-| `src.scenarios` | Copula fitting and scenario fan generation. | `DAMCopulaGenerator`, `RTMRolloutGenerator` |
-| `src.optimizer` | LP formulation, CVaR logic, and solver interface. | `TwoStageBESS`, `BESSParams` |
+| **Two-Stage SP** | Deterministic (q50) | Deterministic models "chase" high-probability spreads that may only be marginally profitable, ignoring the risk of deep-tail losses that SP captures via scenario fans. |
+| **Gaussian Copula** | Independent Sampling | Markets are highly coupled ($\rho \approx 0.6$). Independent sampling would underestimate the probability of joint price spikes, leading to aggressive (and risky) commitments. |
+| **CVaR Metric** | Standard Deviation | CVaR is coherent and focuses exclusively on downside tail risk, which is critical for merchant BESS assets with high Capex/Opex sensitivity. |
 
-### 3.1 Data Flow Sequence
+---
+
+## 4. Key Constraints & Physicality
+
+- **Terminal State Equality:** $E_{s,24} = E_{\text{initial}}$. We enforce a fixed terminal SoC (typically 50%) to prevent "value-leakage" where the optimizer drains the battery to maximize Day 1 revenue at the expense of Day 2 readiness.
+- **Efficiency Losses:** Round-trip efficiency is modeled as $\eta_{\text{rt}} = 90\%$, applied as $\eta = 94.87\%$ for both charging and discharging steps.
+- **Physical Friction:** A degradation cost of ₹650/MWh is applied to all discharge units, ensuring the battery only cycles when market spreads exceed the cost of wear-and-tear.
+
+---
+
+## 5. System Data Flow
 
 ```mermaid
-sequenceDiagram
-    participant D as Data Layer
-    participant F as Forecasting
-    participant S as Scenario Gen
-    participant O as Optimizer
-    participant E as Evaluator
-
-    D->>F: Hist Prices/Weather
-    F->>S: Quantile Predictions
-    Note over S: Apply CQR Corrections
-    S->>O: Joint Scenario Fan (200 paths)
-    O->>O: Solve Two-Stage LP
-    O->>E: DAM Commitment (h00-h23)
-    E->>E: Optimal RTM Recourse (Actual Prices)
-    E->>D: Store Backtest Results
+graph TD
+    A[Market Data / Features] --> B[Quantile LGBM Models]
+    B --> C{CQR Engine}
+    C -->|Recalibrated Quantiles| D[Copula Scenario Gen]
+    D -->|200 Joint Paths| E[Two-Stage SP Optimizer]
+    E --> F[DAM Commitment]
+    F --> G[RTM Recourse Evaluation]
+    G --> H[Backtest Metrics]
 ```
-
----
-
-## 4. Key Constraints & Heuristics
-
-- **Terminal SoC Constraint:** $E_{24} \ge 100 \text{ MWh}$. Ensures multi-day sustainability; prevents the optimizer from "emptying the tank" at the end of a high-priced Day 1.
-- **Physical Feasibility:** Simultaneous charging and discharging is naturally avoided by the objective function (due to the ₹200/side IEX fee friction), but strictly prevented by the SoC dynamics.
-- **Asset Capacity:** 50MW Power / 200MWh Energy. SoC operating range: 20–180 MWh (160 MWh usable).
-- **Efficiency**: 90% Round-trip ($\eta = 94.87\%$ for both charge and discharge).
-- **Complexity**: Objective includes ₹650/MWh degradation and ₹50/MWh VOM per discharge unit.

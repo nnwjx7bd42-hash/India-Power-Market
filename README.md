@@ -1,18 +1,23 @@
 # BESS Virtual Power Plant (VPP) Optimizer
 
-A state-of-the-art Stochastic Optimization system for Battery Energy Storage Systems. This build implements a cost-aware, risk-managed trading agent for the Indian Power Market (IEX).
+This repository contains a Two-Stage Stochastic Programming framework for optimizing Battery Energy Storage Systems (BESS) within the Indian Energy Exchange (IEX).
 
-## 📋 Table of Contents
-1. [Installation](#-installation)
-2. [Data Pipeline](#-data-pipeline)
-3. [Model Training](#-model-training)
-4. [Optimization & Backtesting](#-optimization--backtesting)
-5. [Configuration](#-configuration)
-6. [Advanced: Recalibration (CQR)](#-advanced-recalibration-cqr)
+## Executive Context
+In the Indian power market, the coexistence of the Day-Ahead Market (DAM) and Real-Time Market (RTM) presents a significant arbitrage opportunity for energy storage. However, naive "spread-chasing" strategies often fall victim to forecast uncertainty and "bull traps" in the RTM tail. 
+
+This system solves the arbitrage problem by modeling it as a **Two-Stage Stochastic Program (SP)**. It commits to DAM schedules while accounting for 200 possible RTM scenario paths, explicitly incorporating Conditional Value at Risk (CVaR) to ensure commercial resilience against tail-end price spikes or crashes.
+
+## Table of Contents
+1. [Installation](#installation)
+2. [Data Pipeline](#data-pipeline)
+3. [Model Training](#model-training)
+4. [Optimization & Backtesting](#optimization--backtesting)
+5. [Configuration](#configuration)
+6. [Advanced: Recalibration (CQR)](#advanced-recalibration-cqr)
 
 ---
 
-## 🛠 Installation
+## Installation
 
 ### 1. Prerequisites
 - Python 3.9+
@@ -29,93 +34,76 @@ pip install -r requirements.txt
 
 ---
 
-## 📈 Data Pipeline
+## Data Pipeline
 
 The system expects data in the `Data/` directory:
-- `Data/Raw/`: CSVs of historical MCP (Market Clearing Price).
-- `Data/Features/`: Precompute features using:
+- `Data/Raw/`: CSVs of historical market clearing prices (MCP).
+- `Data/Features/`: Generate technical and market features using:
   ```bash
   python scripts/build_features.py
   ```
 
 ---
 
-## 🧠 Model Training
+## Model Training
 
 We use LightGBM Quantile Regression to predict the price distribution (q10, q25, q50, q75, q90).
 ```bash
 python scripts/train_models.py
 ```
-*Models are saved in `models/rtm/` and `models/dam/`.*
+*Models are serialized to `models/rtm/` and `models/dam/`.*
 
 ---
 
-## ⚖️ Optimization & Backtesting
+## Optimization & Backtesting
 
-### 1. Standard Two-Stage Backtest
-Calculates Stage 1 commitments and solves for Stage 2 recourse against actual realized prices.
+### 1. Two-Stage Backtest
+Calculates Stage 1 (DAM) commitments and solves for Stage 2 (RTM) recourse against actual realized market prices.
 ```bash
 python scripts/run_phase3b_backtest.py
 ```
 
-### 2. CVaR Risk-Return Sweep
+### 2. Risk-Return Analysis
 Maps the **Efficient Frontier** by varying the risk-aversion coefficient ($\lambda$).
 ```bash
-# Uses the original scenario fan
+# Evaluate against original scenarios
 python scripts/run_cvar_sweep.py --scenarios original
 
-# Uses the CQR-recalibrated fan (Phase 4B outcome)
+# Evaluate against CQR-recalibrated scenarios
 python scripts/run_cvar_sweep.py --scenarios recalibrated
 ```
 
 ---
 
-## ⚙️ Configuration
+## Configuration
 
-- `config/bess.yaml`: Physical battery specs (50MW / 200MWh, 90% RTE).
-- `config/phase3b.yaml`: Optimizer settings (200 protocols, deviation penalties).
-- `config/costs_config.yaml`: Risk settings (₹200/side IEX Fees, ₹650 Degradation).
+- `config/bess.yaml`: Physical asset specifications (50MW / 200MWh, 90% RTE).
+- `config/phase3b.yaml`: Optimizer settings (200 scenarios, deviation penalties).
+- `config/costs_config.yaml`: Market friction and asset costs (₹200/side IEX Fees, ₹650 Degradation).
 
 ---
 
-## 🎯 Advanced: Recalibration (CQR)
+## Advanced: Recalibration (CQR)
 
-If you notice "prediction gaps" (coverage mismatch), run the CQR engine:
-1. **Compute Deltas**: 
+If the realized coverage (e.g., actuals falling within the q10-q90 interval) deviates significantly from the target (e.g., >5% error), run the Conformal Quantile Regression (CQR) engine:
+1. **Compute Residual Deltas**: 
    ```bash
    python scripts/run_recalibration.py
    ```
-2. **Regenerate Scenarios**:
+2. **Regenerate Calibrated Scenarios**:
    ```bash
    python scripts/regenerate_scenarios.py
    ```
 
 ---
 
-## 📊 Results Summary
-- **Net Revenue**: ~₹198M (143-day backtest period).
-- **Risk Mitigation**: recalibrated scenarios achieve **+₹51K Worst Day** results even at $\lambda=0$.
-- **Asset**: 50MW / 200MWh BESS with 90% Round-trip efficiency.
+## Results Summary
+- **Performance**: Normalized net revenue of ~₹2.5M / MWh-cap / year.
+- **Resilience**: CQR recalibration provides a secure profit floor of **+₹51K Worst Day** at $\lambda=0$.
+- **Asset Specs**: 50MW / 200MWh BESS with 90% Round-trip efficiency.
 
 ---
 
-## 📁 Directory Structures
-
-```text
-.
-├── src/                # Implementation logic
-│   ├── features/       # Feature engineering & IEX lags
-│   ├── forecasting/    # LGBM Quantile Models & CQR engine
-│   ├── optimizer/      # PuLP SLP formulation
-│   └── scenarios/      # Copula & Joint generation
-├── scripts/            # Entry point for all pipelines
-├── config/             # YAML specification files
-├── models/             # Serialized .txt model artifacts
-└── results/            # Performance JSONs & Parquet logs
-```
-
----
-
-## 🛡 License & Authors
-GENCO - Clean Build VPP. 
-Designed for Advanced BESS Arbitrage.
+## Project Status
+**Authorship**: GENCO Clean Build VPP. 
+Designed for institutional-grade BESS arbitrage and market risk management.

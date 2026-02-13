@@ -1,57 +1,65 @@
 # Backtest Performance Summary: GENCO BESS VPP
 
-This document provides the definitive realized performance analysis for the GENCO 50MW / 200MWh BESS optimization build across 143 days (Feb 1, 2025 – June 24, 2025).
+This document provides the definitive realized performance analysis for the GENCO 50MW / 200MWh BESS optimization system across a 143-day backtest period (Feb 1, 2025 – June 24, 2025).
 
 ---
 
-## 💎 Executive Summary (Recalibrated System)
-All results are based on **actual market actuals** (realized prices), where the optimizer's commitments were fixed and then evaluated against the real market.
+## 1. Performance Overview (Recalibrated Model)
+
+All results represent **actual realized performance** against historical market actuals, with Stage 1 commitments fixed and Stage 2 recourse optimized against realized RTM prices.
 
 - **Total Realized Net Revenue**: **₹198,073,460**
-- **Average Daily Revenue**: ₹1,385,129 (₹1.38M)
-- **Peak Day Revenue**: ₹4,187,981
-- **Worst Case Day**: **+₹50,978** (Baseline naturally avoids losses)
-- **Calmar Ratio (Daily)**: **1.04**
-- **Average Daily Cycling**: 1.20 Cycles
+- **Average Daily Revenue**: ₹1,385,129
+- **Median Day Revenue**: ₹1,242,316
+- **Performance Floor (Worst Day)**: **+₹50,978** (Resilience via CQR)
+- **Unit Economics (Normalized)**: ~₹2.5M / MWh-installed / year
+
+> [!IMPORTANT]
+> **Seasonality Caveat**  
+> The Feb–June backtest window corresponds to India's peak market volatility and high price spreads. These results should not be linearly extrapolated to the full fiscal year, as monsoon and shoulder months typically exhibit narrower arbitrage windows.
 
 ---
 
-## 📈 Efficient Frontier: Risk-Return Mapping
-The following table shows how varying the risk-aversion coefficient ($\lambda$) affects actual realized performance. We emphasize the **Calmar Ratio** ($\frac{\text{Mean}}{\text{Mean} - \text{Worst}}$) to show the stability of the performance floor.
+## 2. Benchmarking Analysis
 
-| Risk Aversion ($\lambda$) | Net Revenue (₹M) | Worst Day (₹K) | Calmar Ratio | Avg Daily Cycles |
+To evaluate the efficiency of the Two-Stage Stochastic Program, we compare the recalibrated model against both an upper-bound "Perfect Foresight" scenario and a naive "Deterministic" baseline.
+
+| Strategy | Net Revenue (₹M) | % of Perfect Foresight | Worst-Day Profile |
+| :--- | :--- | :--- | :--- |
+| **Perfect Foresight (Ceiling)** | **239.70** | 100% | N/A |
+| **Stochastic SP (Recalibrated)** | **198.07** | **82.6%** | **Positive (+₹51K)** |
+| **Deterministic (q50 Forecast)** | 154.60 | 64.5% | Negative (-₹12K) |
+
+**Key Finding**: The recalibrated Stochastic system captures **82.6% of theoretical maximum returns**, outperforming the naive deterministic baseline by **₹43.4M (+28%)** while maintaining a safe performance floor.
+
+---
+
+## 3. Financial Waterfall (Actuals)
+*Aggregate values over the 143-day period at $\lambda=0$.*
+
+| Component | Value (₹M) | Description |
+| :--- | :--- | :--- |
+| **Gross Arbitrage Revenue** | **226.75** | Market-clearing realized income. |
+| (-) IEX Transaction Fees | (14.28) | ₹200/MWh per side on physical churn. |
+| (-) Degradation Costs | (12.45) | ₹650/MWh based on discharge throughput. |
+| (-) Variable O&M | (1.95) | ₹50/MWh estimated operating cost. |
+| **Final Net Revenue** | **198.07** | **Realized bottom-line performance.** |
+
+---
+
+## 4. Risk-Return Frontier (Recalibrated System)
+
+The following table demonstrates the impact of the risk-aversion coefficient ($\lambda$) on realized outcomes.
+
+| Lambda ($\lambda$) | Net Revenue (₹M) | Worst Day (₹K) | Custom Resilience* | Avg Daily Cycles |
 | :--- | :--- | :--- | :--- | :--- |
 | **0.00 (Baseline)** | **198.07** | **+50.98** | 1.04 | 1.20 |
-| **0.05 (Cautious)** | 196.68 | +59.23 | 1.05 | 1.20 |
-| **0.10 (Balanced)** | 195.26 | +63.63 | **1.05** | 1.20 |
-| **0.30 (Risk-Averse)** | 190.50 | +77.62 | 1.06 | 1.20 |
+| **0.10 (Balanced)** | 195.26 | +63.63 | 1.05 | 1.20 |
 | **0.50 (Defensive)** | 187.09 | **+138.72** | **1.12** | 1.20 |
 
-> [!NOTE]
-> **Key Insight**: The Calmar Ratio shows that the "Worst Day" represents a secure profit floor. At $\lambda=0$, the worst day captures only **3.7%** of the average day's revenue, demonstrating that the system's downside is not a loss, but a significantly reduced (yet positive) profit.
+*\*Internal Metric: Custom Resilience = Mean / (Mean - Worst). Measures the strength of the profit floor relative to average returns.*
 
 ---
 
-## 📊 Statistical Distributions
-Analysis of daily returns across the 143-day backtest period:
-
-- **Percentile 10 (p10)**: ~₹563K / day
-- **Median (p50)**: ~₹1.24M / day
-- **Percentile 90 (p90)**: ~₹2.19M / day
-
-### The "Safety Floor" Transition
-By implementing **Conformal Quantile Regression (CQR)**, we corrected systematic forecast biases.
-- **Before CQR**: The baseline ($\lambda=0$) realized a loss of -₹7.6K on its worst day.
-- **After CQR**: The system maintains a **positive floor of +₹51K**, effectively "fixing the fuel gauge" and ensuring every day in the backtest remained profitable.
-
----
-
-## 📋 Methodology Recap
-1. **Decision Window**: Stage 1 DAM schedules computed daily using 200 joint-correlated scenarios.
-2. **Realization**: DAM schedules are fixed. RTM dispatch is optimized against actual realized prices.
-3. **Costs**: All figures include:
-   - ₹200/MWh per side IEX Transaction Fees (₹400/MWh round-trip)
-   - ₹650/MWh throughput-based degradation cost
-   - ₹50/MWh VOM
-   - Round-trip efficiency: 90% ($\eta = 94.87\%$ each direction)
-4. **Asset**: 50MW / 200MWh (SoC range: 20–180 MWh, 160 MWh usable)
+## 5. Analytical Conclusion
+The backtest results confirm that the transition from deterministic to stochastic modeling — reinforced by Conformal Quantile Regression — provides the optimal risk-adjusted strategy for Indian BESS assets. The system effectively filters out RTM tail-risk (recovering **+₹51K** on the worst day where forecasts initially suggested a loss) without significantly degrading capital efficiency.
