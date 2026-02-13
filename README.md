@@ -46,6 +46,17 @@ The Indian power market features sequential DAM and RTM settlement. A merchant B
 
 ---
 
+## Data Inputs & Features
+
+The LightGBM forecasting models ingest a diverse feature set to capture the complexities of the Indian Power Grid:
+
+- **Market Data (IEX)**: Lagged MCPs for DAM/RTM, DAM-RTM price spreads, and historical bid-stack volumes (Buy/Sell ratios).
+- **Grid Fundamentals**: Total system demand, renewable generation (Solar/Wind), net demand, and estimated thermal plant utilization.
+- **Weather Intelligence**: Weighted national temperatures, regional Delhi/Chennai data, solar irradiance (shortwave flux), and Cooling Degree Hours (CDH) as a proxy for cooling load.
+- **Temporal/Calendar**: Hour of day, day of week, monsoon season flags, and holiday proximity.
+
+---
+
 ## Configuration
 
 Core parameters are managed in `config/`:
