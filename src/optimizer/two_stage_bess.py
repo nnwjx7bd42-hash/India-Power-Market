@@ -78,7 +78,11 @@ class TwoStageBESS:
             # Physical Degradation
             degradation = self.params.degradation_cost_rs_mwh * pulp.lpSum([y_d[s][t] for t in range(24)])
             
-            scenario_revenues_expr.append(arbitrage - fees - degradation)
+            # NEW: DSM Friction Proxy (CERC 2024 Optimization Layer)
+            # Approx: 3% physical error * ₹4500 Normal Rate = ₹135/MWh throughput friction
+            dsm_friction = 135.0 * pulp.lpSum([y_c[s][t] + y_d[s][t] for t in range(24)])
+            
+            scenario_revenues_expr.append(arbitrage - fees - degradation - dsm_friction)
 
         avg_revenue = pulp.lpSum(scenario_revenues_expr) / n_scenarios
         

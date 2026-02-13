@@ -170,6 +170,8 @@ def run_backtest(args):
             "dam_schedule": res['dam_schedule'],
             "rtm_realized_schedule": eval_res['rtm_schedule'],
             "soc_realized": eval_res['soc'],
+            "actual_dam_prices": day_data['dam_actual'].tolist(),
+            "actual_rtm_prices": day_data['rtm_actual'].tolist(),
             "scenarios": res['scenarios']
         }
         

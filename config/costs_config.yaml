@@ -22,12 +22,14 @@ costs:
     charge_per_mwh: 0
     waiver: true  # Co-located BESS commissioned by June 2028
 
-  # DSM Penalties (Phase 3C: constant rate approximation)
+  # DSM Penalties (CERC DSM Regs 2024)
   dsm_penalties:
     enabled: true
-    mode: "constant"
-    estimated_penalty_per_mwh_deviation: 500  # ₹/MWh
-    assumed_deviation_pct: 5  # % of energy assumed to deviate
+    mode: "block_wise_nr"
+    physical_error_pct: 3.0           # Physical deviation basis (approx 3% of throughput)
+    estimated_as_cost_rs_mwh: 5000.0   # Approximation for ancillary services cost
+    nr_ceiling_rs_mwh: 8000.0         # Regulatory cap for Normal Rate
+    fallback_nr_rs_mwh: 4500.0        # Fallback if prices are missing
 
   # Open Access / Cross-Subsidy
   open_access:

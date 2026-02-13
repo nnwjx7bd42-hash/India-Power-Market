@@ -60,10 +60,18 @@ def run_backtest_with_costs():
             
         y_stoch = daily_res['rtm_realized_schedule']
         y_dam = daily_res['dam_schedule']
+        
+        # Supply actual prices for per-block Normal Rate (NR) calculation
+        # These are now saved in the updated daily JSON from run_phase3b_backtest.py
+        dam_acp = np.array(daily_res['actual_dam_prices'])
+        rtm_acp = np.array(daily_res['actual_rtm_prices'])
+        
         costs_stoch = cost_model.compute_costs(
             charge=np.where(np.array(y_stoch) < 0, -np.array(y_stoch), 0),
             discharge=np.where(np.array(y_stoch) > 0, np.array(y_stoch), 0),
-            scheduled=np.array(y_dam)
+            scheduled=np.array(y_dam),
+            dam_actual=dam_acp,
+            rtm_actual=rtm_acp
         )
         
         row_data = {

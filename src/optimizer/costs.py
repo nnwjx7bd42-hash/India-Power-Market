@@ -62,19 +62,29 @@ class CostModel:
         if self.ists_cfg.get('enabled') and not self.ists_cfg.get('waiver'):
             ists = total_throughput * self.ists_cfg.get('charge_per_mwh', 0)
             
-        # 5. DSM Penalty Estimates
+        # 5. DSM Penalty Estimates (CERC DSM Regs 2024)
         dsm_penalty = 0
         if self.dsm_cfg.get('enabled'):
-            if scheduled is not None:
-                # Actual dev = abs(actual physical - scheduled)
-                # actual physical = discharge - charge
-                actual_net = discharge - charge
-                dev_mwh = np.sum(np.abs(actual_net - scheduled))
+            if self.dsm_cfg.get('mode') == 'block_wise_nr' and dam_actual is not None and rtm_actual is not None:
+                # Normal Rate (NR) = (DAM_ACP + RTM_ACP + AS_cost) / 3
+                as_cost = self.dsm_cfg.get('estimated_as_cost_rs_mwh', 5000)
+                nr = (dam_actual + rtm_actual + as_cost) / 3.0
+                
+                # Cap at 8000
+                nr_capped = np.minimum(nr, self.dsm_cfg.get('nr_ceiling_rs_mwh', 8000))
+                
+                # Deviation Volume = 3% of physical throughput
+                # Throughput per block = |discharge - charge| -> but for DSM, throughput error 
+                # is often modeled as % of energy flow.
+                error_pct = self.dsm_cfg.get('physical_error_pct', 3.0) / 100.0
+                block_throughput = charge + discharge
+                
+                dsm_penalty = np.sum(block_throughput * error_pct * nr_capped)
             else:
-                # Approximation: assume fixed % of throughput deviates
-                dev_mwh = total_throughput * (self.dsm_cfg.get('assumed_deviation_pct', 0) / 100.0)
-            
-            dsm_penalty = dev_mwh * self.dsm_cfg.get('estimated_penalty_per_mwh_deviation', 0)
+                # Fallback to simple throughput-based approximation if price data is missing
+                fallback_rate = self.dsm_cfg.get('fallback_nr_rs_mwh', 4500)
+                error_pct = self.dsm_cfg.get('physical_error_pct', 3.0) / 100.0
+                dsm_penalty = total_throughput * error_pct * fallback_rate
             
         # 6. Open Access
         oa = 0

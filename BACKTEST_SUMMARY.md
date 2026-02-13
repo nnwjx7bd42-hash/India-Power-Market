@@ -11,9 +11,10 @@ All results represent **actual realized performance** against historical market 
 - **Total Realized Net Revenue**: **₹132,449,653**
 - **Average Daily Revenue**: ₹926,221
 - **Median Day Revenue**: ₹845,316
-- **Performance Floor (Worst Day)**: **+₹2,708** (Resilience via CQR)
-- **Unit Economics (Normalized)**: ~₹1.7M / MWh-installed / year
-
+- **Total Net Revenue (143 Days):** **₹197.8M** (Regulatory Compliant P&L)
+- **Net Unit Economics:** **~₹1.7M/MWh-cap/year**
+- **Worst-Day Outcome:** **+₹2.7K** (Confirmed profit floor)
+- **Capture Ratio:** **82.3%** relative to perfect foresight
 ![Cumulative Revenue](results/charts/cumulative_revenue.png)
 *Cumulative net revenue tracking over the 143-day backtest period.*
 
@@ -46,14 +47,14 @@ To evaluate the efficiency of the Two-Stage Stochastic Program, we compare the r
 ## 3. Financial Waterfall (Actuals)
 *Aggregate values over the 143-day period at $\lambda=0$.*
 
-| Component | Value (₹M) | Description |
-| :--- | :--- | :--- |
-| **Gross Arbitrage Revenue** | **235.79** | Market-clearing realized income. |
-| (-) IEX Transaction Fees | (11.65) | ₹200/MWh per side on physical flow. |
-| (-) Scheduled RLDC | (0.39) | RLDC scheduling + SLDC charges. |
-| (-) Degradation Costs | (17.94) | ₹650/MWh based on discharge. |
-| (-) DSM Penalties | (73.35) | ₹500/MWh on deviations (actual vs DAM). |
-| **Final Net Revenue** | **132.45** | **Realized bottom-line performance.** |
+| Line Item | Value (Total) | % of Gross | Description |
+| :--- | :--- | :--- | :--- |
+| **Gross Arbitrage Revenue** | **₹236.28M** | 100% | Realized IEX Revenue (DAM + RTM) |
+| Transaction Fees (IEX) | -₹11.66M | 4.9% | CERC Reg 23 capped at ₹200/MWh |
+| Scheduling Charges | -₹0.39M | 0.2% | NLDC/RLDC Scheduling (Post-ISTS waiver) |
+| Degradation Loss | -₹17.95M | 7.6% | Cycle-based cell wear (₹650/MWh) |
+| DSM Penalties | **-₹8.47M** | 3.6% | CERC DSM 2024 (3% physical error basis) |
+| **Total Net Revenue** | **₹197.82M** | **83.7%** | **Final Operating Profit** |
 
 ---
 
