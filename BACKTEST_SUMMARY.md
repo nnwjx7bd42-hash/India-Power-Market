@@ -4,17 +4,17 @@ This document provides the definitive realized performance analysis for the GENC
 
 ---
 
-## 1. Performance Overview (Recalibrated Model)
+## 1. Performance Overview
 
-All results represent **actual realized performance** against historical market actuals, with Stage 1 commitments fixed and Stage 2 recourse optimized against realized RTM prices.
+All results represent **actual realized performance** against historical market actuals, with Stage 1 commitments fixed and Stage 2 recourse optimized against realized RTM prices. Costs include CERC 2024 DSM penalties with block-wise Normal Rate.
 
-- **Total Realized Net Revenue**: **₹132,449,653**
-- **Average Daily Revenue**: ₹926,221
-- **Median Day Revenue**: ₹845,316
-- **Total Net Revenue (143 Days):** **₹198.08M** (CERC 2024 Regulatory Compliant P&L)
-- **Net Unit Economics:** **~₹1.7M/MWh-cap/year**
-- **Worst-Day Outcome:** **+₹2.7K** (Confirmed profit floor)
+- **Total Net Revenue (143 Days):** **₹198.08M**
+- **Total Gross Revenue:** ₹234.28M
+- **Average Daily Net Revenue:** ₹1,385,159
+- **Net Unit Economics:** ~₹1.7M/MWh-cap/year
+- **Worst-Day Outcome:** +₹2.7K (Confirmed profit floor)
 - **Capture Ratio:** **78.9%** relative to perfect foresight (net-cost basis)
+- **Revenue Haircut (Costs):** 15.5% of gross
 ![Cumulative Revenue](results/charts/cumulative_revenue.png)
 *Cumulative net revenue tracking over the 143-day backtest period.*
 
@@ -33,14 +33,14 @@ To evaluate the efficiency of the Two-Stage Stochastic Program, we compare the r
 
 | Strategy | Net Revenue (₹M) | % of Perfect Foresight | Worst-Day Profile |
 | :--- | :--- | :--- | :--- |
-| **Perfect Foresight (Ceiling)** | **160.35** | 100% | N/A |
-| **Stochastic SP (Recalibrated)** | **132.45** | **82.6%** | **Positive (+₹3K)** |
-| **Deterministic (q50 Forecast)** | 103.42 | 64.5% | Negative (-₹45K) |
+| **Perfect Foresight (Ceiling)** | **251.0** | 100% | N/A |
+| **Stochastic SP** | **198.1** | **78.9%** | **Positive (+₹3K)** |
+| **Deterministic (q50 Forecast)** | 198.3 | 79.0% | Negative (-₹25K) |
 
 ![Expected vs Realized](results/charts/expected_vs_realized.png)
 *Daily performance scatter: Expected vs. Realized revenue (₹K).*
 
-**Key Finding**: The recalibrated Stochastic system captures **82.6% of theoretical maximum returns**, outperforming the naive deterministic baseline by **₹43.4M (+28%)** while maintaining a safe performance floor.
+**Key Finding**: The Stochastic system captures **78.9% of theoretical maximum returns** while maintaining a guaranteed profit floor — the deterministic baseline matches on total revenue but exposes the portfolio to ₹25K worst-day losses.
 
 ---
 
@@ -58,17 +58,20 @@ To evaluate the efficiency of the Two-Stage Stochastic Program, we compare the r
 
 ---
 
-## 4. Risk-Return Frontier (Recalibrated System)
+## 4. Risk-Return Frontier
 
 The following table demonstrates the impact of the risk-aversion coefficient ($\lambda$) on realized outcomes.
 
-| Lambda ($\lambda$) | Net Revenue (₹M) | Worst Day (₹K) | Custom Resilience* | Avg Daily Cycles |
-| :--- | :--- | :--- | :--- | :--- |
-| **0.00 (Baseline)** | **132.45** | **+2.71** | 1.00 | 1.20 |
-| **0.10 (Balanced)** | 130.56 | +12.63 | 1.00 | 1.20 |
-| **0.50 (Defensive)** | 125.09 | **+88.72** | **1.10** | 1.20 |
+> [!NOTE]
+> The λ sweep below was computed **before** the CERC 2024 DSM friction was added to the LP objective. Net revenue figures here are on a gross basis. Re-running `run_cvar_sweep.py` with the updated pipeline will produce updated net-cost numbers.
 
-*\*Internal Metric: Custom Resilience = Mean / (Mean - Worst). Measures the strength of the profit floor relative to average returns.*
+| Lambda ($\lambda$) | Gross Revenue (₹M) | Worst Day (₹K) | Avg Daily Cycles |
+| :--- | :--- | :--- | :--- |
+| **0.00 (Baseline)** | **234.3** | **+2.7** | 1.20 |
+| **0.10 (Balanced)** | ~230 | ~+13 | 1.20 |
+| **0.50 (Defensive)** | ~220 | ~+89 | 1.20 |
+
+*These are indicative. Exact post-regulatory net numbers require re-running `run_cvar_sweep.py` with the updated cost model.*
 
 ---
 

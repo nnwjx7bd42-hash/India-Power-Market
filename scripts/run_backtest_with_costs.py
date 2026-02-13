@@ -59,7 +59,6 @@ def run_backtest_with_costs():
             daily_res = json.load(f)
             
         y_stoch = daily_res['rtm_realized_schedule']
-        y_dam = daily_res['dam_schedule']
         
         # Supply actual prices for per-block Normal Rate (NR) calculation
         # These are now saved in the updated daily JSON from run_phase3b_backtest.py
