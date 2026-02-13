@@ -14,6 +14,12 @@ All results represent **actual realized performance** against historical market 
 - **Performance Floor (Worst Day)**: **+₹50,978** (Resilience via CQR)
 - **Unit Economics (Normalized)**: ~₹2.5M / MWh-installed / year
 
+![Cumulative Revenue](results/charts/cumulative_revenue.png)
+*Cumulative net revenue tracking over the 143-day backtest period.*
+
+![Daily Revenue Distribution](results/charts/daily_revenue_distribution.png)
+*Frequency distribution of daily realized revenue (₹K) with KDE overlay.*
+
 > [!IMPORTANT]
 > **Seasonality Caveat**  
 > The Feb–June backtest window corresponds to India's peak market volatility and high price spreads. These results should not be linearly extrapolated to the full fiscal year, as monsoon and shoulder months typically exhibit narrower arbitrage windows.
@@ -29,6 +35,9 @@ To evaluate the efficiency of the Two-Stage Stochastic Program, we compare the r
 | **Perfect Foresight (Ceiling)** | **239.70** | 100% | N/A |
 | **Stochastic SP (Recalibrated)** | **198.07** | **82.6%** | **Positive (+₹51K)** |
 | **Deterministic (q50 Forecast)** | 154.60 | 64.5% | Negative (-₹12K) |
+
+![Expected vs Realized](results/charts/expected_vs_realized.png)
+*Daily performance scatter: Expected vs. Realized revenue (₹K).*
 
 **Key Finding**: The recalibrated Stochastic system captures **82.6% of theoretical maximum returns**, outperforming the naive deterministic baseline by **₹43.4M (+28%)** while maintaining a safe performance floor.
 
@@ -61,5 +70,25 @@ The following table demonstrates the impact of the risk-aversion coefficient ($\
 
 ---
 
-## 5. Analytical Conclusion
+## 5. Visual Diagnostics
+
+### 5.1 Risk Management (Efficient Frontier)
+The λ sweep demonstrates the tradeoff between total revenue and floor protection.
+
+![Efficient Frontier](results/charts/efficient_frontier.png)
+
+### 5.2 Price Forecast Quality
+The system relies on high-fidelity probabilistic forecasts. The charts below demonstrate WMAPE by hour and the calibration of the prediction intervals.
+
+![WMAPE by Hour](results/charts/forecast_wmape_by_hour.png)
+![Quantile Calibration](results/charts/quantile_calibration.png)
+
+### 5.3 Sample Dispatch (April 10, 2025)
+A visualization of the DAM price fan versus actuals on the highest-revenue day of the backtest.
+
+![Forecast Fan](results/charts/forecast_fan_sample_day.png)
+
+---
+
+## 6. Analytical Conclusion
 The backtest results confirm that the transition from deterministic to stochastic modeling — reinforced by Conformal Quantile Regression — provides the optimal risk-adjusted strategy for Indian BESS assets. The system effectively filters out RTM tail-risk (recovering **+₹51K** on the worst day where forecasts initially suggested a loss) without significantly degrading capital efficiency.
