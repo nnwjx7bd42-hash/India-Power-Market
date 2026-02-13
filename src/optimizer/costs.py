@@ -18,6 +18,12 @@ class CostModel:
         self.dsm_cfg = self.config.get('dsm_penalties', {})
         self.oa_cfg = self.config.get('open_access', {})
 
+    @classmethod
+    def from_yaml(cls, path: str):
+        with open(path, 'r') as f:
+            data = yaml.safe_load(f)
+        return cls(data)
+
     def compute_costs(self, charge: np.ndarray, discharge: np.ndarray,
                       dam_actual: np.ndarray = None, rtm_actual: np.ndarray = None, 
                       scheduled: np.ndarray = None) -> dict:
