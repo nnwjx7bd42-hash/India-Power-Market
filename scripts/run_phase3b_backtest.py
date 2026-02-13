@@ -50,6 +50,12 @@ def evaluate_actuals(bess_params, dam_schedule, dam_actual, rtm_actual, cost_mod
     fees = bess_params.iex_fee_rs_mwh * pulp.lpSum([y_c[t] + y_d[t] for t in range(24)])
     degradation = bess_params.degradation_cost_rs_mwh * pulp.lpSum([y_d[t] for t in range(24)])
     
+    # Deviation auxiliary variables for λ penalty
+    dev = pulp.LpVariable.dicts("dev", range(24), lowBound=0)
+    for t in range(24):
+        prob += dev[t] >= y[t] - dam_schedule[t]
+        prob += dev[t] >= dam_schedule[t] - y[t]
+        
     prob.objective = revenue - fees - degradation - lambda_dev * pulp.lpSum([dev[t] for t in range(24)])
     
     solver = pulp.PULP_CBC_CMD(msg=0)
