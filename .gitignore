@@ -39,3 +39,4 @@ Data/Features/
 Data/Predictions/
 # results (summary metadata allowed)
 !results/*.json
+docs/
