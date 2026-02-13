@@ -68,10 +68,10 @@ class TwoStageBESS:
                 for t in range(24)
             ])
             
-            # Transaction Fees (Stage 1 + Stage 2 deviations) - Market Churn Model
-            # This matches the Phase 3D optimizer objective exactly.
+            # Transaction Fees (Physical Flow Model)
+            # This matches the Phase 3D baseline evaluation.
             fees = self.params.iex_fee_rs_mwh * pulp.lpSum([
-                (x_d[t] + x_c[t]) + (dev_pos[s][t] + dev_neg[s][t])
+                (y_c[s][t] + y_d[s][t])
                 for t in range(24)
             ])
             

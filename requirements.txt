@@ -35,3 +35,5 @@ lightgbm>=4.0
 optuna>=3.0
 scipy>=1.10
 joblib>=1.3.0
+pulp>=2.7.0
+scikit-learn>=1.3.0
