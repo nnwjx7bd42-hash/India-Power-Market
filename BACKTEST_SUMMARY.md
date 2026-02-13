@@ -8,11 +8,11 @@ This document provides the definitive realized performance analysis for the GENC
 
 All results represent **actual realized performance** against historical market actuals, with Stage 1 commitments fixed and Stage 2 recourse optimized against realized RTM prices.
 
-- **Total Realized Net Revenue**: **₹198,073,460**
-- **Average Daily Revenue**: ₹1,385,129
-- **Median Day Revenue**: ₹1,242,316
-- **Performance Floor (Worst Day)**: **+₹50,978** (Resilience via CQR)
-- **Unit Economics (Normalized)**: ~₹2.5M / MWh-installed / year
+- **Total Realized Net Revenue**: **₹132,449,653**
+- **Average Daily Revenue**: ₹926,221
+- **Median Day Revenue**: ₹845,316
+- **Performance Floor (Worst Day)**: **+₹2,708** (Resilience via CQR)
+- **Unit Economics (Normalized)**: ~₹1.7M / MWh-installed / year
 
 ![Cumulative Revenue](results/charts/cumulative_revenue.png)
 *Cumulative net revenue tracking over the 143-day backtest period.*
@@ -32,9 +32,9 @@ To evaluate the efficiency of the Two-Stage Stochastic Program, we compare the r
 
 | Strategy | Net Revenue (₹M) | % of Perfect Foresight | Worst-Day Profile |
 | :--- | :--- | :--- | :--- |
-| **Perfect Foresight (Ceiling)** | **239.70** | 100% | N/A |
-| **Stochastic SP (Recalibrated)** | **198.07** | **82.6%** | **Positive (+₹51K)** |
-| **Deterministic (q50 Forecast)** | 154.60 | 64.5% | Negative (-₹12K) |
+| **Perfect Foresight (Ceiling)** | **160.35** | 100% | N/A |
+| **Stochastic SP (Recalibrated)** | **132.45** | **82.6%** | **Positive (+₹3K)** |
+| **Deterministic (q50 Forecast)** | 103.42 | 64.5% | Negative (-₹45K) |
 
 ![Expected vs Realized](results/charts/expected_vs_realized.png)
 *Daily performance scatter: Expected vs. Realized revenue (₹K).*
@@ -62,9 +62,9 @@ The following table demonstrates the impact of the risk-aversion coefficient ($\
 
 | Lambda ($\lambda$) | Net Revenue (₹M) | Worst Day (₹K) | Custom Resilience* | Avg Daily Cycles |
 | :--- | :--- | :--- | :--- | :--- |
-| **0.00 (Baseline)** | **198.07** | **+50.98** | 1.04 | 1.20 |
-| **0.10 (Balanced)** | 195.26 | +63.63 | 1.05 | 1.20 |
-| **0.50 (Defensive)** | 187.09 | **+138.72** | **1.12** | 1.20 |
+| **0.00 (Baseline)** | **132.45** | **+2.71** | 1.00 | 1.20 |
+| **0.10 (Balanced)** | 130.56 | +12.63 | 1.00 | 1.20 |
+| **0.50 (Defensive)** | 125.09 | **+88.72** | **1.10** | 1.20 |
 
 *\*Internal Metric: Custom Resilience = Mean / (Mean - Worst). Measures the strength of the profit floor relative to average returns.*
 

@@ -12,7 +12,7 @@ The Indian power market features sequential DAM and RTM settlement. A merchant B
 3.  **Two-Stage Stochastic Optimization**: Committing to DAM schedules (Stage 1) while modeling RTM recourse (Stage 2) across all 200 scenarios.
 4.  **Risk Management**: Incorporating Conditional Value at Risk (CVaR) with Conformal Quantile Regression (CQR) to ensure a secure profit floor.
 
-**Result**: The optimizer captures **82.6% of perfect-foresight revenue**, providing institutional-grade performance of ~₹2.5M/MWh-cap/year with a confirmed profit floor of +₹51K on the worst day.
+**Result**: The optimizer captures **82.6% of perfect-foresight revenue**, providing institutional-grade performance of ~₹1.7M/MWh-cap/year with a confirmed profit floor of +₹3K on the worst day.
 
 ---
 
@@ -22,15 +22,15 @@ The Indian power market features sequential DAM and RTM settlement. A merchant B
 
 | Metric | Stochastic SP (Recalibrated) | Deterministic (q50) | Perfect Foresight |
 | :--- | :--- | :--- | :--- |
-| **Total Net Revenue** | **₹198.1M** | ₹154.6M | ₹239.7M |
+| **Total Net Revenue** | **₹132.5M** | ₹103.4M | ₹160.4M |
 | **Capture Ratio** | **82.6%** | 64.5% | 100% |
-| **Worst-Day Outcome** | **+₹51K** | -₹12K | N/A |
+| **Worst-Day Outcome** | **+₹3K** | -₹45K | N/A |
 | **Avg. Daily Cycles** | 1.2 | 1.1 | 1.3 |
 
 **Risk-Return Frontier ($\lambda$ Sweep)**:
-- **Baseline ($\lambda=0$):** ₹198.1M revenue, +₹51K worst-day profit.
-- **Risk-Managed ($\lambda=0.1$):** ₹195.3M revenue, +₹64K worst-day profit.
-- **Defensive ($\lambda=0.5$):** ₹187.1M revenue, +₹139K worst-day profit.
+- **Baseline ($\lambda=0$):** ₹132.5M revenue, +₹3K worst-day profit.
+- **Risk-Managed ($\lambda=0.1$):** ₹130.6M revenue, +₹13K worst-day profit.
+- **Defensive ($\lambda=0.5$):** ₹125.1M revenue, +₹89K worst-day profit.
 
 ---
 
