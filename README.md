@@ -106,4 +106,3 @@ If the realized coverage (e.g., actuals falling within the q10-q90 interval) dev
 
 ## Project Status
 **Authorship**: GENCO Clean Build VPP. 
-Designed for institutional-grade BESS arbitrage and market risk management.
