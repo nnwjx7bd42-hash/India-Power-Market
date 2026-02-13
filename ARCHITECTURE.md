@@ -1,6 +1,6 @@
 # Architecture & Technical Design: BESS Stochastic Optimizer
 
-This document provides a deep dive into the mathematical framework, statistical models, and software architecture of the BESS Virtual Power Plant (VPP) system.
+This document provides a deep dive into the mathematical framework, statistical models, and software architecture of the GENCO BESS Virtual Power Plant (VPP) system.
 
 ---
 
@@ -72,7 +72,7 @@ sequenceDiagram
     D->>F: Hist Prices/Weather
     F->>S: Quantile Predictions
     Note over S: Apply CQR Corrections
-    S->>O: Joint Scenario Fan (100 paths)
+    S->>O: Joint Scenario Fan (200 paths)
     O->>O: Solve Two-Stage LP
     O->>E: DAM Commitment (h00-h23)
     E->>E: Optimal RTM Recourse (Actual Prices)
@@ -83,6 +83,8 @@ sequenceDiagram
 
 ## 4. Key Constraints & Heuristics
 
-- **Terminal SoC Constraint:** $E_{24} \ge \text{Target SoC}$. Crucial for multi-day sustainability; prevents the optimizer from "emptying the tank" at the end of a high-priced Day 1.
-- **Physical Feasibility:** Simultaneous charging and discharging is naturally avoided by the objective function (due to the IEX fee friction), but strictly prevented by the SoC dynamics.
-- **Numerical Stability:** A small deviation penalty ($\lambda_{\text{dev}}=10$) ensures that if DAM and RTM prices are equal, the optimizer prefers the "low-friction" Stage 1 commitment.
+- **Terminal SoC Constraint:** $E_{24} \ge 100 \text{ MWh}$. Ensures multi-day sustainability; prevents the optimizer from "emptying the tank" at the end of a high-priced Day 1.
+- **Physical Feasibility:** Simultaneous charging and discharging is naturally avoided by the objective function (due to the ₹200/side IEX fee friction), but strictly prevented by the SoC dynamics.
+- **Asset Capacity:** 50MW Power / 200MWh Energy. SoC operating range: 20–180 MWh (160 MWh usable).
+- **Efficiency**: 90% Round-trip ($\eta = 94.87\%$ for both charge and discharge).
+- **Complexity**: Objective includes ₹650/MWh degradation and ₹50/MWh VOM per discharge unit.

@@ -72,9 +72,9 @@ python scripts/run_cvar_sweep.py --scenarios recalibrated
 
 ## ⚙️ Configuration
 
-- `config/bess.yaml`: Physical battery specs (P_max, E_max, Efficiency, Degradation Cost).
-- `config/phase3b.yaml`: Optimizer settings (n_scenarios, deviation penalties).
-- `config/cvar_config.yaml`: Risk settings (Alpha, Lambda values).
+- `config/bess.yaml`: Physical battery specs (50MW / 200MWh, 90% RTE).
+- `config/phase3b.yaml`: Optimizer settings (200 protocols, deviation penalties).
+- `config/costs_config.yaml`: Risk settings (₹200/side IEX Fees, ₹650 Degradation).
 
 ---
 
@@ -89,6 +89,13 @@ If you notice "prediction gaps" (coverage mismatch), run the CQR engine:
    ```bash
    python scripts/regenerate_scenarios.py
    ```
+
+---
+
+## 📊 Results Summary
+- **Net Revenue**: ~₹198M (143-day backtest period).
+- **Risk Mitigation**: recalibrated scenarios achieve **+₹51K Worst Day** results even at $\lambda=0$.
+- **Asset**: 50MW / 200MWh BESS with 90% Round-trip efficiency.
 
 ---
 
@@ -110,5 +117,5 @@ If you notice "prediction gaps" (coverage mismatch), run the CQR engine:
 ---
 
 ## 🛡 License & Authors
-Project Alpha - Clean Build VPP. 
+GENCO - Clean Build VPP. 
 Designed for Advanced BESS Arbitrage.
