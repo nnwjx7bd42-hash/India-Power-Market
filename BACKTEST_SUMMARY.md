@@ -92,4 +92,4 @@ A visualization of the DAM price fan versus actuals on the highest-revenue day o
 ---
 
 ## 6. Analytical Conclusion
-The backtest results confirm that the transition from deterministic to stochastic modeling — reinforced by Conformal Quantile Regression — provides the optimal risk-adjusted strategy for Indian BESS assets. The system effectively filters out RTM tail-risk (recovering **+₹51K** on the worst day where forecasts initially suggested a loss) without significantly degrading capital efficiency.
+The backtest results confirm that the transition from deterministic to stochastic modeling — reinforced by Conformal Quantile Regression — provides the optimal risk-adjusted strategy for Indian BESS assets. The system effectively filters out RTM tail-risk (recovering **+₹2.7K** on the worst day where forecasts initially suggested a loss) without significantly degrading capital efficiency.
