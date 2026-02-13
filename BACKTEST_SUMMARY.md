@@ -48,11 +48,12 @@ To evaluate the efficiency of the Two-Stage Stochastic Program, we compare the r
 
 | Component | Value (₹M) | Description |
 | :--- | :--- | :--- |
-| **Gross Arbitrage Revenue** | **226.75** | Market-clearing realized income. |
-| (-) IEX Transaction Fees | (14.28) | ₹200/MWh per side on physical churn. |
-| (-) Degradation Costs | (12.45) | ₹650/MWh based on discharge throughput. |
-| (-) Variable O&M | (1.95) | ₹50/MWh estimated operating cost. |
-| **Final Net Revenue** | **198.07** | **Realized bottom-line performance.** |
+| **Gross Arbitrage Revenue** | **235.79** | Market-clearing realized income. |
+| (-) IEX Transaction Fees | (11.65) | ₹200/MWh per side on physical flow. |
+| (-) Scheduled RLDC | (0.39) | RLDC scheduling + SLDC charges. |
+| (-) Degradation Costs | (17.94) | ₹650/MWh based on discharge. |
+| (-) DSM Penalties | (73.35) | ₹500/MWh on deviations (actual vs DAM). |
+| **Final Net Revenue** | **132.45** | **Realized bottom-line performance.** |
 
 ---
 

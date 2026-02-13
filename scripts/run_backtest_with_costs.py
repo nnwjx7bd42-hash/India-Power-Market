@@ -59,10 +59,11 @@ def run_backtest_with_costs():
             daily_res = json.load(f)
             
         y_stoch = daily_res['rtm_realized_schedule']
+        y_dam = daily_res['dam_schedule']
         costs_stoch = cost_model.compute_costs(
-            np.where(np.array(y_stoch) < 0, -np.array(y_stoch), 0),
-            np.where(np.array(y_stoch) > 0, np.array(y_stoch), 0),
-            scheduled=np.array(y_stoch)
+            charge=np.where(np.array(y_stoch) < 0, -np.array(y_stoch), 0),
+            discharge=np.where(np.array(y_stoch) > 0, np.array(y_stoch), 0),
+            scheduled=np.array(y_dam)
         )
         
         row_data = {

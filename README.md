@@ -12,7 +12,7 @@ The Indian power market features sequential DAM and RTM settlement. A merchant B
 3.  **Two-Stage Stochastic Optimization**: Committing to DAM schedules (Stage 1) while modeling RTM recourse (Stage 2) across all 200 scenarios.
 4.  **Risk Management**: Incorporating Conditional Value at Risk (CVaR) with Conformal Quantile Regression (CQR) to ensure a secure profit floor.
 
-**Result**: The optimizer captures **82.6% of perfect-foresight revenue**, providing institutional-grade performance of ~₹1.7M/MWh-cap/year with a confirmed profit floor of +₹3K on the worst day.
+**Result**: The optimizer captures **82.6% of perfect-foresight revenue**, providing institutional-grade performance of ~₹1.13M/MWh-cap/year with a confirmed profit floor of +₹3K on the worst day.
 
 ---
 
