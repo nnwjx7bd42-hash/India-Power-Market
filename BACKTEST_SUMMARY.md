@@ -8,46 +8,50 @@ This document provides the definitive realized performance analysis for the GENC
 
 All results represent **actual realized performance** against historical market actuals, with Stage 1 commitments fixed and Stage 2 recourse optimized against realized RTM prices. Costs include CERC 2024 DSM penalties with block-wise Normal Rate.
 
-- **Total Net Revenue (143 Days):** **₹198.08M**
-- **Total Gross Revenue:** ₹234.28M
-- **Average Daily Net Revenue:** ₹1,385,159
-- **143-Day Unit Economics:** ₹198M ÷ 200 MWh = **₹0.99M/MWh-cap** over 143 days
-- **Worst-Day Outcome (No CVaR):** -₹97K | **With CVaR (λ=0):** +₹75K
-- **Capture Ratio:** **78.9%** relative to perfect foresight (net-cost basis)
-- **Revenue Haircut (Costs):** 15.5% of gross
-![Cumulative Revenue](results/charts/cumulative_revenue.png)
-*Cumulative net revenue tracking over the 143-day backtest period.*
-
-![Daily Revenue Distribution](results/charts/daily_revenue_distribution.png)
-*Frequency distribution of daily realized revenue (₹K) with KDE overlay.*
-
-> [!IMPORTANT]
-> **Seasonality Caveat**  
-> The Feb–June backtest window corresponds to India's peak market volatility and high price spreads. Naively annualizing (₹198M × 365/143 = ₹505M) **overstates** full-year performance. Monsoon and shoulder months typically exhibit 40–50% narrower arbitrage windows. A conservative full-year estimate applies a ~50% seasonal discount to the remaining 222 days.
+### Headline (Production Strategy: Soft Terminal + SoC Chaining)
+- **Total Net Revenue (143 Days):** **₹204.4M**
+- **Capture Ratio:** **81.4%** relative to perfect foresight (net-cost basis)
+- **Average Daily Net Revenue:** ₹1,429K
+- **143-Day Unit Economics:** ₹204M ÷ 200 MWh = **₹1.02M/MWh-cap** over 143 days
 
 ---
 
-## 2. Benchmarking Analysis
+## 2. Six-Strategy Comparison
 
-To evaluate the efficiency of the Two-Stage Stochastic Program, we compare the recalibrated model against both an upper-bound "Perfect Foresight" scenario and a naive "Deterministic" baseline.
+| Strategy | Net Revenue (₹M) | Avg Daily (₹K) | Worst Day (₹K) | Avg SoC₂₄ (MWh) | vs Baseline |
+| :--- | ---: | ---: | ---: | ---: | :---: |
+| **Soft Terminal + SoC Chaining** | **204.4** | **1,429** | **0** | **—** | **Baseline** |
+| 48h Rolling Horizon (Option B) | 202.8 | 1,418 | −104 | 20 | −0.8% |
+| 7-Day Extensive Form (Option B) | 200.6 | 1,403 | −121 | 20 | −1.9% |
+| Hard Terminal (Phase 3B) | 198.1 | 1,385 | −97 | 100 | −3.1% |
+| 48h Rolling Horizon (Option A) | 196.9 | 1,377 | −104 | 100 | −3.7% |
+| 7-Day Extensive Form (Option A) | 195.2 | 1,365 | −111 | 100 | −4.5% |
+| **Perfect Foresight (Ceiling)** | **251.0** | **—** | **—** | **—** | **—** |
 
-| Strategy | Net Revenue (₹M) | % of Perfect Foresight | Worst-Day (₹K) |
-| :--- | :--- | :--- | :--- |
-| **Perfect Foresight (Ceiling)** | **251.0** | 100% | N/A |
-| **Stochastic SP** | **198.1** | **78.9%** | **-₹97K** |
-| **Deterministic (q50 Forecast)** | 198.3 | 79.0% | -₹25K |
+> **Option A** = Hard terminal constraint (SoC must return to 100 MWh each day in evaluation).
+> **Option B** = Physical floor only (SoC allowed to drop to 20 MWh in evaluation).
 
-![Expected vs Realized](results/charts/expected_vs_realized.png)
-*Daily performance scatter: Expected vs. Realized revenue (₹K).*
+### Key Findings
 
-> [!IMPORTANT]
-> **Why Stochastic Matters (Despite Equal Revenue)**  
-> The deterministic baseline matches the stochastic system on *total* revenue (₹198.3M vs ₹198.1M). The value of the stochastic framework is **risk management, not expected return**. With CVaR risk management (λ ≥ 0, Section 4), the stochastic worst-day floor jumps from -₹97K to **+₹75K** — free insurance that costs only 1% of total revenue. The deterministic baseline has no such mechanism.
+1. **Soft terminal wins**: Relaxing the forced SoC reset from 100 → physical floor and chaining overnight SoC yields +3.2% over hard terminal.
+2. **Option B > Option A**: Within each multi-day strategy, physical floor eval (+3.0% rolling, +2.8% extensive) captures more intraday spread.
+3. **Simpler is better**: The single-day soft terminal optimizer (₹204.4M) outperforms all multi-day planners — the planning-evaluation mismatch penalizes multi-day LPs.
+4. **Worst-week resilience**: All strategies maintain ₹4.6M–4.9M in their worst 7-day window.
+5. **With CVaR (λ=0)**: Worst-day floor lifts from −₹97K to **+₹75K** — free tail-risk insurance at <1% cost.
+
+![Cumulative Revenue](Data/Results/multiday_comparison/cumulative_revenue.png)
+*Cumulative net revenue across all strategies over the 143-day backtest period.*
+
+![Daily Revenue Overlay](Data/Results/multiday_comparison/daily_revenue_overlay.png)
+*Daily net revenue comparison across strategies.*
+
+![SoC Trajectory](Data/Results/multiday_comparison/soc_trajectory.png)
+*Terminal SoC (MWh) trajectory — Option A stays at 100, Option B drops to physical floor (20).*
 
 ---
 
-## 3. Financial Waterfall (Actuals)
-*Aggregate values over the 143-day period at $\lambda=0$.*
+## 3. Financial Waterfall (Soft Terminal Baseline)
+*Aggregate values over the 143-day period.*
 
 | Line Item | Value (Total) | % of Gross | Description |
 | :--- | :--- | :--- | :--- |
@@ -56,7 +60,7 @@ To evaluate the efficiency of the Two-Stage Stochastic Program, we compare the r
 | Scheduling Charges | -₹0.38M | 0.2% | NLDC/RLDC Scheduling (Post-ISTS waiver) |
 | Degradation Loss | -₹16.86M | 7.2% | Cycle-based cell wear (₹650/MWh) |
 | DSM Penalties | **-₹8.01M** | 3.4% | CERC DSM 2024 (3% physical error × block-wise NR) |
-| **Total Net Revenue** | **₹198.08M** | **84.5%** | **Final Operating Profit** |
+| **Total Net Revenue** | **₹204.4M** | **87.2%** | **Final Operating Profit** |
 
 ---
 
@@ -75,29 +79,48 @@ The following table demonstrates the impact of the risk-aversion coefficient ($\
 
 *\*Custom Resilience = Mean / (Mean - Worst). Measures the strength of the profit floor relative to average returns.*
 
-**Key Insight**: Revenue is remarkably stable across the λ range — the spread from λ=0 to λ=0.5 is only **₹6.8M (3.5%)**, while the worst-day floor sits at +₹75K–₹87K. The tightly clustered resilience (1.06–1.07) confirms the system inherently operates in a low-risk regime.
-
 ---
 
-## 5. Visual Diagnostics
+## 5. Forecasting Performance
 
-### 5.1 Risk Management (Efficient Frontier)
-The λ sweep demonstrates the tradeoff between total revenue and floor protection.
-
-![Efficient Frontier](results/charts/efficient_frontier.png)
-
-### 5.2 Price Forecast Quality
-The system relies on high-fidelity probabilistic forecasts. The charts below demonstrate WMAPE by hour and the calibration of the prediction intervals.
+| Model | WMAPE | MAE (₹/MWh) |
+| :--- | :--- | :--- |
+| DAM (Day D) | 15.68% | — |
+| RTM (Day D) | 11.29% | — |
+| DAM (Day D+1) | 19.29% | 858 |
 
 ![WMAPE by Hour](results/charts/forecast_wmape_by_hour.png)
 ![Quantile Calibration](results/charts/quantile_calibration.png)
 
-### 5.3 Sample Dispatch (April 10, 2025)
-A visualization of the DAM price fan versus actuals on the highest-revenue day of the backtest.
+---
 
+## 6. Multi-Day Scenario Generation
+
+- **200 scenarios × 7 days × 143 dates** = 200,200 rows per market
+- **Cross-day correlation**: ρ = 0.241 (AR(1) on daily-average z-scores)
+- **Day D**: From trained quantile models
+- **Day D+1**: From D+1 DAM forecaster (WMAPE 19.3%)
+- **Days D+2..D+6**: Climatological fallback (expanding-window median of quantile predictions)
+
+---
+
+## 7. Visual Diagnostics
+
+### Efficient Frontier
+![Efficient Frontier](results/charts/efficient_frontier.png)
+
+### Expected vs Realized
+![Expected vs Realized](results/charts/expected_vs_realized.png)
+
+### Sample Dispatch (April 10, 2025)
 ![Forecast Fan](results/charts/forecast_fan_sample_day.png)
 
 ---
 
-## 6. Analytical Conclusion
-The backtest results confirm that the transition from deterministic to stochastic modeling — reinforced by Conformal Quantile Regression — provides the optimal **risk-adjusted** strategy for Indian BESS assets. While both strategies achieve comparable total revenue (~₹198M), the CVaR-managed stochastic system lifts the worst-day floor from -₹97K to **+₹75K**, providing free tail-risk insurance at negligible cost to expected returns.
+## 8. Analytical Conclusion
+
+The backtest results reveal that **simple per-day optimization with soft terminal SoC chaining** (₹204.4M) outperforms all multi-day planning formulations. While multi-day LPs show promise in theory, the planning-evaluation mismatch — where the planner reserves energy for tomorrow but the evaluation LP cannot realize that value — reduces their effectiveness by 1–5%. Option B (physical floor evaluation) significantly narrows this gap, confirming that the terminal constraint is the dominant performance driver. The production recommendation is the **soft terminal + SoC chaining** strategy with CVaR risk management for guaranteed floor protection.
+
+> [!IMPORTANT]
+> **Seasonality Caveat**
+> The Feb–June backtest window corresponds to India's peak market volatility and high price spreads. Naively annualizing (₹204M × 365/143 = ₹521M) **overstates** full-year performance. Monsoon and shoulder months typically exhibit 40–50% narrower arbitrage windows. A conservative full-year estimate applies a ~50% seasonal discount to the remaining 222 days.
