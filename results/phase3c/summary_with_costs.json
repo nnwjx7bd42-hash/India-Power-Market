@@ -1,0 +1,40 @@
+{
+  "n_days": 143,
+  "total_gross_revenue": 234283101.4734921,
+  "total_costs": 36205336.0006548,
+  "total_net_revenue": 198077765.47283733,
+  "haircut_pct": 15.45366941659309,
+  "avg_daily_net": 1385159.1991107506,
+  "cost_breakdown": {
+    "iex": 10949679.367799997,
+    "scheduling": 384547.1143102001,
+    "degradation": 16857055.628075004,
+    "dsm": 8014053.8904695995
+  },
+  "degradation_sweep": [
+    {
+      "Level": 0,
+      "Net Revenue (\u20b9M)": 214.93482110091236
+    },
+    {
+      "Level": 300,
+      "Net Revenue (\u20b9M)": 207.15464158026236
+    },
+    {
+      "Level": 500,
+      "Net Revenue (\u20b9M)": 201.9678552331624
+    },
+    {
+      "Level": 650,
+      "Net Revenue (\u20b9M)": 198.07776547283726
+    },
+    {
+      "Level": 800,
+      "Net Revenue (\u20b9M)": 194.18767571251232
+    },
+    {
+      "Level": 1000,
+      "Net Revenue (\u20b9M)": 189.0008893654124
+    }
+  ]
+}

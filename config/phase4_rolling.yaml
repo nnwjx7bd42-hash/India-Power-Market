@@ -11,4 +11,4 @@ paths:
   scenarios_rtm: "Data/Predictions/joint_rtm_scenarios_backtest.parquet"
   actuals_dam: "Data/Predictions/dam_quantiles_backtest.csv"
   actuals_rtm: "Data/Predictions/rtm_quantiles_backtest.csv"
-  results_dir: "Data/Results/phase4_rolling"
+  results_dir: "results/phase4_rolling"

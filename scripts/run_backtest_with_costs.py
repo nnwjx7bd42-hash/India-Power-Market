@@ -43,7 +43,7 @@ def run_backtest_with_costs():
     
     cost_model = CostModel(costs_config)
     
-    results_dir = Path("Data/Results/phase3b")
+    results_dir = Path("results/phase3b")
     daily_results_dir = results_dir / "daily"
     
     backtest_df, bench_df = load_data(results_dir)
@@ -100,7 +100,7 @@ def run_backtest_with_costs():
         sweep_results.append({'Level': level, 'Net Revenue (₹M)': total_net / 1e6})
     
     # Save results
-    output_dir = Path("Data/Results/phase3c")
+    output_dir = Path("results/phase3c")
     output_dir.mkdir(parents=True, exist_ok=True)
     df_with_costs.to_csv(output_dir / "backtest_results_with_costs.csv", index=False)
     

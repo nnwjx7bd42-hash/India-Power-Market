@@ -39,13 +39,13 @@ All results represent **actual realized performance** against historical market 
 4. **Worst-week resilience**: All strategies maintain ₹4.6M–4.9M in their worst 7-day window.
 5. **With CVaR (λ=0)**: Worst-day floor lifts from −₹97K to **+₹75K** — free tail-risk insurance at <1% cost.
 
-![Cumulative Revenue](Data/Results/multiday_comparison/cumulative_revenue.png)
+![Cumulative Revenue](results/multiday_comparison/cumulative_revenue.png)
 *Cumulative net revenue across all strategies over the 143-day backtest period.*
 
-![Daily Revenue Overlay](Data/Results/multiday_comparison/daily_revenue_overlay.png)
+![Daily Revenue Overlay](results/multiday_comparison/daily_revenue_overlay.png)
 *Daily net revenue comparison across strategies.*
 
-![SoC Trajectory](Data/Results/multiday_comparison/soc_trajectory.png)
+![SoC Trajectory](results/multiday_comparison/soc_trajectory.png)
 *Terminal SoC (MWh) trajectory — Option A stays at 100, Option B drops to physical floor (20).*
 
 ---

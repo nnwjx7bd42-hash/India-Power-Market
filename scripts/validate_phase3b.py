@@ -8,7 +8,7 @@ def validate():
     print("PHASE 3B VALIDATION REPORT")
     print("============================================================")
     
-    results_dir = Path("Data/Results/phase3b")
+    results_dir = Path("results/phase3b")
     backtest_df = pd.read_csv(results_dir / "backtest_results.csv")
     bench_df = pd.read_csv(results_dir / "benchmark_results.csv")
     

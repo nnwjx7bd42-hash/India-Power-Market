@@ -30,37 +30,37 @@ plt.rcParams.update({
 STRATEGIES = {
     'baseline': {
         'label': 'Baseline (Hard Terminal)',
-        'results_dir': 'Data/Results/phase3b',
+        'results_dir': 'results/phase3b',
         'color': '#7f8c8d',
         'linestyle': '-'
     },
     'soft_terminal': {
         'label': 'Soft Terminal (+SoC Chaining)',
-        'results_dir': 'Data/Results/phase3b_backtest_soft',
+        'results_dir': 'results/phase3b_backtest_soft',
         'color': '#2ecc71',
         'linestyle': '-'
     },
     'rolling_optA': {
         'label': '48h Rolling (Option A)',
-        'results_dir': 'Data/Results/phase4_rolling',
+        'results_dir': 'results/phase4_rolling',
         'color': '#3498db',
         'linestyle': '--'
     },
     'rolling_optB': {
         'label': '48h Rolling (Option B)',
-        'results_dir': 'Data/Results/phase4_rolling_optb',
+        'results_dir': 'results/phase4_rolling_optb',
         'color': '#e74c3c',
         'linestyle': '-'
     },
     'multiday_optA': {
         'label': '7-Day Extensive (Option A)',
-        'results_dir': 'Data/Results/phase4_multiday',
+        'results_dir': 'results/phase4_multiday',
         'color': '#9b59b6',
         'linestyle': '--'
     },
     'multiday_optB': {
         'label': '7-Day Extensive (Option B)',
-        'results_dir': 'Data/Results/phase4_multiday_optb',
+        'results_dir': 'results/phase4_multiday_optb',
         'color': '#e67e22',
         'linestyle': '-'
     }
@@ -91,7 +91,7 @@ def load_strategy_data(strategy_name: str, config: dict) -> dict:
 
 def run_comparison():
     parser = argparse.ArgumentParser(description='Compare Multi-Day Strategies')
-    parser.add_argument('--output-dir', type=str, default='Data/Results/multiday_comparison')
+    parser.add_argument('--output-dir', type=str, default='results/multiday_comparison')
     args = parser.parse_args()
     
     output_dir = Path(args.output_dir)

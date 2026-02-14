@@ -8,8 +8,8 @@ def validate_costs():
     print("PHASE 3C VALIDATION REPORT")
     print("============================================================")
     
-    results_dir_c = Path("Data/Results/phase3c")
-    results_dir_b = Path("Data/Results/phase3b")
+    results_dir_c = Path("results/phase3c")
+    results_dir_b = Path("results/phase3b")
     
     df = pd.read_csv(results_dir_c / "backtest_results_with_costs.csv")
     with open(results_dir_c / "summary_with_costs.json", 'r') as f:

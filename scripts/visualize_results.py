@@ -223,7 +223,7 @@ def main():
     output_dir.mkdir(parents=True, exist_ok=True)
     
     # Load Main Results (Soft Terminal Baseline)
-    results_path = "Data/Results/phase3b/backtest_results.csv"
+    results_path = "results/phase3b/backtest_results.csv"
     if Path(results_path).exists():
         print(f"Loading results from {results_path}...")
         df_results = pd.read_csv(results_path)
