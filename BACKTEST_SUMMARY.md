@@ -11,8 +11,8 @@ All results represent **actual realized performance** against historical market 
 - **Total Net Revenue (143 Days):** **₹198.08M**
 - **Total Gross Revenue:** ₹234.28M
 - **Average Daily Net Revenue:** ₹1,385,159
-- **Net Unit Economics:** ~₹1.7M/MWh-cap/year
-- **Worst-Day Outcome:** +₹2.7K (Confirmed profit floor)
+- **143-Day Unit Economics:** ₹198M ÷ 200 MWh = **₹0.99M/MWh-cap** over 143 days
+- **Worst-Day Outcome (No CVaR):** -₹97K | **With CVaR (λ=0):** +₹75K
 - **Capture Ratio:** **78.9%** relative to perfect foresight (net-cost basis)
 - **Revenue Haircut (Costs):** 15.5% of gross
 ![Cumulative Revenue](results/charts/cumulative_revenue.png)
@@ -23,7 +23,7 @@ All results represent **actual realized performance** against historical market 
 
 > [!IMPORTANT]
 > **Seasonality Caveat**  
-> The Feb–June backtest window corresponds to India's peak market volatility and high price spreads. These results should not be linearly extrapolated to the full fiscal year, as monsoon and shoulder months typically exhibit narrower arbitrage windows.
+> The Feb–June backtest window corresponds to India's peak market volatility and high price spreads. Naively annualizing (₹198M × 365/143 = ₹505M) **overstates** full-year performance. Monsoon and shoulder months typically exhibit 40–50% narrower arbitrage windows. A conservative full-year estimate applies a ~50% seasonal discount to the remaining 222 days.
 
 ---
 
@@ -31,16 +31,18 @@ All results represent **actual realized performance** against historical market 
 
 To evaluate the efficiency of the Two-Stage Stochastic Program, we compare the recalibrated model against both an upper-bound "Perfect Foresight" scenario and a naive "Deterministic" baseline.
 
-| Strategy | Net Revenue (₹M) | % of Perfect Foresight | Worst-Day Profile |
+| Strategy | Net Revenue (₹M) | % of Perfect Foresight | Worst-Day (₹K) |
 | :--- | :--- | :--- | :--- |
 | **Perfect Foresight (Ceiling)** | **251.0** | 100% | N/A |
-| **Stochastic SP** | **198.1** | **78.9%** | **Positive (+₹3K)** |
-| **Deterministic (q50 Forecast)** | 198.3 | 79.0% | Negative (-₹25K) |
+| **Stochastic SP** | **198.1** | **78.9%** | **-₹97K** |
+| **Deterministic (q50 Forecast)** | 198.3 | 79.0% | -₹25K |
 
 ![Expected vs Realized](results/charts/expected_vs_realized.png)
 *Daily performance scatter: Expected vs. Realized revenue (₹K).*
 
-**Key Finding**: The Stochastic system captures **78.9% of theoretical maximum returns** while maintaining a guaranteed profit floor — the deterministic baseline matches on total revenue but exposes the portfolio to ₹25K worst-day losses.
+> [!IMPORTANT]
+> **Why Stochastic Matters (Despite Equal Revenue)**  
+> The deterministic baseline matches the stochastic system on *total* revenue (₹198.3M vs ₹198.1M). The value of the stochastic framework is **risk management, not expected return**. With CVaR risk management (λ ≥ 0, Section 4), the stochastic worst-day floor jumps from -₹97K to **+₹75K** — free insurance that costs only 1% of total revenue. The deterministic baseline has no such mechanism.
 
 ---
 
@@ -98,4 +100,4 @@ A visualization of the DAM price fan versus actuals on the highest-revenue day o
 ---
 
 ## 6. Analytical Conclusion
-The backtest results confirm that the transition from deterministic to stochastic modeling — reinforced by Conformal Quantile Regression — provides the optimal risk-adjusted strategy for Indian BESS assets. The system effectively filters out RTM tail-risk (recovering **+₹2.7K** on the worst day where forecasts initially suggested a loss) without significantly degrading capital efficiency.
+The backtest results confirm that the transition from deterministic to stochastic modeling — reinforced by Conformal Quantile Regression — provides the optimal **risk-adjusted** strategy for Indian BESS assets. While both strategies achieve comparable total revenue (~₹198M), the CVaR-managed stochastic system lifts the worst-day floor from -₹97K to **+₹75K**, providing free tail-risk insurance at negligible cost to expected returns.

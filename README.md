@@ -12,7 +12,7 @@ The Indian power market features sequential DAM and RTM settlement. A merchant B
 3.  **Two-Stage Stochastic Optimization**: Committing to DAM schedules (Stage 1) while modeling RTM recourse (Stage 2) across all 200 scenarios.
 4.  **Risk Management**: Incorporating Conditional Value at Risk (CVaR) with Conformal Quantile Regression (CQR) to ensure a secure profit floor.
 
-**Result**: The optimizer captures **78.9% of perfect-foresight revenue** (net-cost basis), providing institutional-grade performance of ~₹1.7M/MWh-cap/year with a confirmed profit floor.
+**Result**: The optimizer captures **78.9% of perfect-foresight revenue** (net-cost basis). With CVaR risk management, the worst-day floor lifts from -₹97K to **+₹75K** — free tail-risk insurance at <1% cost to total revenue.
 
 ---
 
@@ -26,7 +26,8 @@ The Indian power market features sequential DAM and RTM settlement. A merchant B
 | :--- | :--- | :--- | :--- |
 | **Total Net Revenue** | **₹198.1M** | ₹198.3M | ₹251.0M |
 | **Capture Ratio** | **78.9%** | 79.0% | 100% |
-| **Worst-Day Outcome** | **+₹3K** | -₹25K | N/A |
+| **Worst-Day (No CVaR)** | **-₹97K** | -₹25K | N/A |
+| **Worst-Day (CVaR λ=0)** | **+₹75K** | — | N/A |
 | **Avg. Daily Cycles** | 1.2 | 1.1 | 1.3 |
 
 **Risk-Return Frontier ($\lambda$ Sweep)** *(post-regulatory net, CERC 2024)*:
@@ -60,7 +61,7 @@ The LightGBM forecasting models ingest a diverse feature set to capture the comp
 ## Configuration
 
 Core parameters are managed in `config/`:
-- **Asset (`bess.yaml`)**: 50MW / 200MWh capacity, 90% Round-trip efficiency.
+- **Asset (`bess.yaml`)**: 50MW / 200MWh nameplate (160MWh usable, 80% DoD), 90% Round-trip efficiency.
 - **Costs (`costs_config.yaml`)**: ₹200/MWh IEX fees (per side), ₹650/MWh degradation.
 - **Optimizer (`phase3b.yaml`)**: 200 scenarios, $\alpha=0.1$ for CVaR tail risk.
 
