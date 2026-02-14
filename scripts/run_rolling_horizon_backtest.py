@@ -89,6 +89,10 @@ def run_rolling_backtest(args):
             continue
         
         # Evaluate Day 1 against actuals
+        # Force hard terminal for evaluation — the 48h optimizer handles
+        # overnight value internally; evaluation should enforce SoC floor.
+        saved_mode = bess_params.soc_terminal_mode
+        bess_params.soc_terminal_mode = "hard"
         eval_res = evaluate_actuals(
             bess_params,
             res['dam_schedule'],
@@ -97,6 +101,7 @@ def run_rolling_backtest(args):
             cost_model=cost_model,
             lambda_dev=config['lambda_dev']
         )
+        bess_params.soc_terminal_mode = saved_mode
         
         if eval_res is None:
             print("EVAL FAILED")
