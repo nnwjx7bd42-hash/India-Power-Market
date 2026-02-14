@@ -243,10 +243,13 @@ def main():
         print(f"❌ Critical: {results_path} not found. Skipping revenue charts.")
 
     # Efficient Frontier (CVaR)
-    cvar_path = "Data/Backtest/cvar_sweep/efficient_frontier_recalibrated.csv"
+    # Efficient Frontier (CVaR)
+    cvar_path = "results/cvar_sweep_summary_recalibrated.json"
     if Path(cvar_path).exists():
         try:
-            df_cvar = pd.read_csv(cvar_path)
+            with open(cvar_path, 'r') as f:
+                data = json.load(f)
+            df_cvar = pd.DataFrame(data)
             plot_efficient_frontier(df_cvar, output_dir)
         except Exception: traceback.print_exc()
     else:
