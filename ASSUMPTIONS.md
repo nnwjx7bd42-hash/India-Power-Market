@@ -82,7 +82,7 @@ This document transparently records every assumption embedded in the BESS arbitr
 | :--- | :--- | :--- |
 | **Feb 1 – Jun 24, 2025 (143 days)** | Peak spread season (pre-monsoon heat). | **Optimistic for annualization** — monsoon/shoulder months have 40–50% narrower spreads. |
 | **No transaction slippage** | Execution at exact MCP with no latency or spread. | Optimistic — real execution has bid-ask friction. |
-| **RTM evaluation uses realized prices** | In the backtest, Stage 2 dispatch is optimized against actual RTM prices. In production, RTM decisions would be made against forecasted prices, reducing capture ratio. Intraday re-optimization with rolling forecasts is a future enhancement. | **Optimistic** — backtest overstates RTM capture vs what a live system would achieve. |
+| **RTM evaluation uses realized prices** | In the backtest, Stage 2 dispatch is optimized against actual RTM prices. In production, RTM decisions would be made against forecasted prices. Intraday re-optimization with rolling forecasts is a future enhancement. | **Optimistic** — production capture ratio will depend on RTM forecast accuracy, which is not yet benchmarked. |
 | **No market feedback** | BESS trading does not affect prices in the backtest. | Realistic at 50 MW. |
 | **Walk-forward design** | Each day uses only information available at D-1 08:00. | Neutral — proper out-of-sample discipline. |
 
@@ -92,7 +92,7 @@ This document transparently records every assumption embedded in the BESS arbitr
 
 - **Seasonality**: The 143-day window is India's most profitable BESS season. A conservative full-year estimate applies ~50% seasonal discount to remaining 222 days.
 - **Degradation modeling**: Moving from flat ₹/MWh to a cycle-counting + calendar aging model would reduce projected revenue by an estimated 3–8%.
-- **Intraday re-optimization**: Current system commits at D-1 and evaluates RTM against realized prices. A production system would need a live RTM forecaster and rolling re-dispatch every 15 minutes — expected to capture less than the backtest shows.
+- **Intraday re-optimization**: Current system commits at D-1 and evaluates RTM against realized prices. A production system would require a live RTM forecaster and rolling re-dispatch every 15 minutes; realized performance will vary with forecast quality.
 - **15-minute granularity**: RTM operates at 15-min blocks; hourly modeling misses intra-hour volatility that a fast-cycling BESS could exploit.
 - **Multi-asset / portfolio effects**: Optimizer runs a single BESS in isolation. Co-optimization with RE assets or multiple storage sites is not modeled.
 - **Regulatory risk**: CERC DSM rules, IEX fee caps, and ISTS waivers are policy instruments that can change.
