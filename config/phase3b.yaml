@@ -6,8 +6,8 @@ lambda_dev: 10.0 # Small penalty for deviation to resolve non-uniqueness
 dev_max_mw: 50.0  # Max deviation matching P_max (unconstrained)
 risk_alpha: 0.1  # For CVaR
 paths:
-  scenarios_dam: "Data/Predictions/joint_dam_scenarios_backtest.parquet"
-  scenarios_rtm: "Data/Predictions/joint_rtm_scenarios_backtest.parquet"
+  scenarios_dam: "Data/Predictions/joint_dam_scenarios_backtest_recalibrated.parquet"
+  scenarios_rtm: "Data/Predictions/joint_rtm_scenarios_backtest_recalibrated.parquet"
   actuals_dam: "Data/Predictions/dam_quantiles_backtest.csv"
   actuals_rtm: "Data/Predictions/rtm_quantiles_backtest.csv"
   results_dir: "results/phase3b"

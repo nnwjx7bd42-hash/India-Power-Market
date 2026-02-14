@@ -9,10 +9,10 @@ This document provides the definitive realized performance analysis for the GENC
 All results represent **actual realized performance** against historical market actuals, with Stage 1 commitments fixed and Stage 2 recourse optimized against realized RTM prices. Costs include CERC 2024 DSM penalties with block-wise Normal Rate.
 
 ### Headline (Production Strategy: Soft Terminal + SoC Chaining)
-- **Total Net Revenue (143 Days):** **₹204.4M**
-- **Capture Ratio:** **81.4%** relative to perfect foresight (net-cost basis)
-- **Average Daily Net Revenue:** ₹1,429K
-- **143-Day Unit Economics:** ₹204M ÷ 200 MWh = **₹1.02M/MWh-cap** over 143 days
+- **Total Net Revenue (143 Days):** **₹201.8M** (Recalibrated Scenarios)
+- **Capture Ratio:** **80.4%** relative to perfect foresight (net-cost basis)
+- **Average Daily Net Revenue:** ₹1,411K
+- **143-Day Unit Economics:** ₹201.8M ÷ 200 MWh = **₹1.01M/MWh-cap** over 143 days
 
 ---
 
@@ -20,7 +20,7 @@ All results represent **actual realized performance** against historical market 
 
 | Strategy | Net Revenue (₹M) | Avg Daily (₹K) | Worst Day (₹K) | Avg SoC₂₄ (MWh) | vs Baseline |
 | :--- | ---: | ---: | ---: | ---: | :---: |
-| **Soft Terminal + SoC Chaining** | **204.4** | **1,429** | **0** | **—** | **Baseline** |
+| **Soft Terminal + SoC Chaining (Recal)** | **201.8** | **1,411** | **+55** | **—** | **Baseline** |
 | 48h Rolling Horizon (Option B) | 202.8 | 1,418 | −104 | 20 | −0.8% |
 | 7-Day Extensive Form (Option B) | 200.6 | 1,403 | −121 | 20 | −1.9% |
 | Hard Terminal (Phase 3B) | 198.1 | 1,385 | −97 | 100 | −3.1% |
@@ -70,12 +70,12 @@ The following table demonstrates the impact of the risk-aversion coefficient ($\
 
 | Lambda ($\lambda$) | Net Revenue (₹M) | Worst Day (₹K) | Custom Resilience* | Avg Daily Cycles |
 | :--- | :--- | :--- | :--- | :--- |
-| **0.00 (Baseline)** | **196.27** | **+75.1** | 1.06 | 1.13 |
-| **0.01** | 196.41 | +75.1 | 1.06 | 1.13 |
-| **0.05** | 196.02 | +85.9 | 1.07 | 1.13 |
-| **0.10 (Balanced)** | **195.86** | **+86.8** | **1.07** | 1.13 |
-| **0.30** | 192.73 | +83.7 | 1.07 | 1.13 |
-| **0.50 (Defensive)** | **189.46** | **+84.6** | 1.07 | 1.13 |
+| **0.00 (Baseline)** | **201.77** | **+55.1** | 1.03 | 1.18 |
+| **0.01** | 201.76 | +55.1 | 1.03 | 1.18 |
+| **0.05** | 201.68 | +55.1 | 1.03 | 1.18 |
+| **0.10 (Balanced)** | **202.01** | **+55.1** | **1.03** | 1.18 |
+| **0.30** | 199.69 | +55.1 | 1.03 | 1.18 |
+| **0.50 (Defensive)** | **197.07** | **+52.3** | 1.03 | 1.18 |
 
 *\*Custom Resilience = Mean / (Mean - Worst). Measures the strength of the profit floor relative to average returns.*
 
@@ -119,7 +119,7 @@ The following table demonstrates the impact of the risk-aversion coefficient ($\
 
 ## 8. Analytical Conclusion
 
-The backtest results reveal that **simple per-day optimization with soft terminal SoC chaining** (₹204.4M) outperforms all multi-day planning formulations. While multi-day LPs show promise in theory, the planning-evaluation mismatch — where the planner reserves energy for tomorrow but the evaluation LP cannot realize that value — reduces their effectiveness by 1–5%. Option B (physical floor evaluation) significantly narrows this gap, confirming that the terminal constraint is the dominant performance driver. The production recommendation is the **soft terminal + SoC chaining** strategy with CVaR risk management for guaranteed floor protection.
+The backtest results reveal that **simple per-day optimization with soft terminal SoC chaining** (₹201.8M) provides a robust baseline. Note: Comparison against multi-day strategies (₹202.8M) is affected by scenario calibration differences (Original vs Recalibrated). Theoretically, the soft terminal baseline remains the production recommendation due to simplicity and floor protection availability via CVaR.
 
 > [!IMPORTANT]
 > **Seasonality Caveat**
