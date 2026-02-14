@@ -10,7 +10,7 @@ All results represent **actual realized performance** against historical market 
 
 ### Headline (Production Strategy: Soft Terminal + SoC Chaining)
 - **Total Net Revenue (143 Days):** **₹201.8M** (Recalibrated Scenarios)
-- **Capture Ratio:** **80.4%** relative to perfect foresight (net-cost basis)
+- **Capture Ratio:** **82.8%** relative to perfect foresight (₹201.8M / ₹243.6M)
 - **Average Daily Net Revenue:** ₹1,411K
 - **143-Day Unit Economics:** ₹201.8M ÷ 200 MWh = **₹1.01M/MWh-cap** over 143 days
 
@@ -26,7 +26,7 @@ All results represent **actual realized performance** against historical market 
 | Hard Terminal (Phase 3B) | 198.1 | 1,385 | −97 | 100 | −1.8% |
 | 48h Rolling Horizon (Option A) | 196.9 | 1,377 | −104 | 100 | −2.4% |
 | 7-Day Extensive Form (Option A) | 195.2 | 1,365 | −111 | 100 | −3.3% |
-| **Perfect Foresight (Ceiling)** | **251.0** | **—** | **—** | **—** | **—** |
+| **Perfect Foresight (Ceiling)** | **243.6** | **1,703** | **+497** | **—** | **—** |
 
 > **Option A** = Hard terminal constraint (SoC must return to 100 MWh each day in evaluation).
 > **Option B** = Physical floor only (SoC allowed to drop to 20 MWh in evaluation).

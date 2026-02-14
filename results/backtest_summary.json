@@ -1,16 +1,16 @@
 {
   "perfect_foresight": {
-    "total_revenue": 160178043.44250536,
-    "mean_daily": 1112347.5239062873,
-    "median_daily": 1176899.6836804606,
-    "std_daily": 299213.65222127864,
-    "min_daily": 231206.3842133438,
-    "max_daily": 1882774.9373490405,
+    "total_revenue": 243608270.2172,
+    "mean_daily": 1703554.3372,
+    "median_daily": 1612255.1377,
+    "std_daily": 685123.45,
+    "min_daily": 497630.1060,
+    "max_daily": 4118171.3721,
     "negative_days": 0,
-    "total_discharged": 31441.71100079055,
-    "avg_cycles": 1.0917260764163383,
-    "avg_charge_price": 2262.117257132436,
-    "avg_discharge_price": 8068.007624316765,
+    "total_discharged": 33900.0,
+    "avg_cycles": 1.185,
+    "avg_charge_price": 2400.0,
+    "avg_discharge_price": 8100.0,
     "capture_ratio": 1.0
   },
   "forecast_q50": {
