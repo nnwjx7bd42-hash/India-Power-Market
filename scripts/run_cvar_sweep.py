@@ -21,8 +21,7 @@ def run_cvar_sweep(args):
     print(f"PHASE 4: CVaR RISK-RETURN SWEEP ({args.scenarios.upper()})")
     print("============================================================")
     
-    # Load configs
-    bess_params = BESSParams.from_yaml("config/bess.yaml")
+    # Load base configs
     with open("config/phase3b.yaml", 'r') as f:
         p3b_config = yaml.safe_load(f)
     with open("config/cvar_config.yaml", 'r') as f:
@@ -45,6 +44,11 @@ def run_cvar_sweep(args):
     )
     
     dates = loader.common_dates
+    if args.day:
+        dates = [args.day]
+    elif args.limit:
+        dates = dates[:args.limit]
+        
     lambdas = cvar_config['cvar']['lambda_values']
     alpha = cvar_config['cvar']['alpha']
     
@@ -62,6 +66,9 @@ def run_cvar_sweep(args):
     for l_val in lambdas:
         print(f"\nRunning sweep for Lambda = {l_val}...")
         
+        # Load fresh BESS params for each lambda to reset SoC state
+        bess_params = BESSParams.from_yaml("config/bess.yaml")
+        
         # Override config for this sweep step
         step_config = p3b_config.copy()
         step_config['lambda_risk'] = l_val
@@ -70,14 +77,34 @@ def run_cvar_sweep(args):
         optimizer = TwoStageBESS(bess_params, step_config)
         
         day_results = []
+        prev_soc = bess_params.soc_initial_mwh
+        
         for i, date in enumerate(dates):
+            # --- Chain SoC ---
+            bess_params.soc_initial_mwh = prev_soc
+            
+            # --- Continuation Value (Soft Terminal) ---
+            if bess_params.soc_terminal_mode == "soft" and i < len(dates) - 1:
+                next_data = loader.get_day_scenarios(dates[i + 1], n_scenarios=20)
+                spread_per_scenario = np.max(next_data['dam'], axis=1) - np.min(next_data['dam'], axis=1)
+                expected_spread = np.mean(spread_per_scenario)
+                bess_params.soc_terminal_value_rs_mwh = max(0, (
+                    expected_spread * bess_params.eta_charge * bess_params.eta_discharge
+                    - bess_params.iex_fee_rs_mwh * 2
+                    - bess_params.degradation_cost_rs_mwh
+                    - 135.0 * 2
+                ))
+            else:
+                bess_params.soc_terminal_value_rs_mwh = 0.0
+
             if i % 20 == 0:
-                print(f"  [{i}/{len(dates)}] {date}...")
+                print(f"  [{i}/{len(dates)}] {date} (SoC₀={prev_soc:.1f})...")
                 
             day_data = loader.get_day_scenarios(date, n_scenarios=step_config['n_scenarios'])
             
             res = optimizer.solve(day_data['dam'], day_data['rtm'])
             if res['status'] != 'Optimal':
+                print(f"FAILED (Status: {res['status']})")
                 continue
                 
             eval_res = evaluate_actuals(
@@ -95,6 +122,9 @@ def run_cvar_sweep(args):
             sched = np.array(eval_res['rtm_schedule'])
             cycles = np.sum(np.where(sched > 0, sched, 0)) / (bess_params.e_max_mwh - bess_params.e_min_mwh)
             
+            # Update prev_soc for next day
+            prev_soc = eval_res['soc'][-1]
+            
             day_results.append({
                 'date': date,
                 'expected_revenue': res['expected_revenue'],
@@ -107,21 +137,24 @@ def run_cvar_sweep(args):
         df = pd.DataFrame(day_results)
         df.to_csv(results_dir / f"results_lambda_{l_val}{suffix}.csv", index=False)
         
-        total_net = df['realized_revenue'].sum()
-        worst_day = df['realized_revenue'].min()
-        avg_cvar = df['cvar_value'].mean()
-        avg_cycles = df['cycles'].mean()
-        sharpe = (df['realized_revenue'].mean() / df['realized_revenue'].std()) * np.sqrt(365) if len(df) > 1 else 0
-        
-        sweep_summary.append({
-            'lambda': l_val,
-            'net_revenue_m': total_net / 1e6,
-            'worst_day_k': worst_day / 1e3,
-            'avg_cvar_k': avg_cvar / 1e3,
-            'sharpe': sharpe,
-            'avg_cycles': avg_cycles
-        })
-        print(f"  Results: Net=₹{total_net/1e6:.2f}M | Worst=₹{worst_day/1e3:.1f}K | Sharpe={sharpe:.2f}")
+        if not df.empty:
+            total_net = df['realized_revenue'].sum()
+            worst_day = df['realized_revenue'].min()
+            avg_cvar = df['cvar_value'].mean()
+            avg_cycles = df['cycles'].mean()
+            sharpe = (df['realized_revenue'].mean() / df['realized_revenue'].std()) * np.sqrt(365) if len(df) > 1 else 0
+            
+            sweep_summary.append({
+                'lambda': l_val,
+                'net_revenue_m': total_net / 1e6,
+                'worst_day_k': worst_day / 1e3,
+                'avg_cvar_k': avg_cvar / 1e3,
+                'sharpe': sharpe,
+                'avg_cycles': avg_cycles
+            })
+            print(f"  Results: Net=₹{total_net/1e6:.2f}M | Worst=₹{worst_day/1e3:.1f}K | Sharpe={sharpe:.2f}")
+        else:
+            print("  No results for this lambda!")
 
     summary_df = pd.DataFrame(sweep_summary)
     summary_df.to_csv(results_dir / f"efficient_frontier{suffix}.csv", index=False)
@@ -140,6 +173,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--scenarios", choices=["original", "recalibrated"],
                     default="original", help="Which scenario set to use")
+    parser.add_argument("--limit", type=int, help="Limit number of days")
+    parser.add_argument("--day", type=str, help="Specific day")
     args = parser.parse_args()
     
     Path("results").mkdir(exist_ok=True)
