@@ -141,10 +141,10 @@ def run_comparison():
         row = {
             'Strategy': data['label'],
             'Days': n_days,
-            'Total Net (₹M)': f'{total_net:.2f}',
-            'Avg Daily (₹K)': f'{avg_daily:.1f}',
-            'Std Daily (₹K)': f'{std_daily:.1f}',
-            'Worst Day (₹K)': f'{worst:.1f}',
+            'Total Net (Rs M)': f'{total_net:.2f}',
+            'Avg Daily (Rs K)': f'{avg_daily:.1f}',
+            'Std Daily (Rs K)': f'{std_daily:.1f}',
+            'Worst Day (Rs K)': f'{worst:.1f}',
             'Uplift vs Baseline': f'{uplift:+.1f}%'
         }
         
@@ -174,7 +174,7 @@ def run_comparison():
         )
     
     ax.set_xlabel('Backtest Day')
-    ax.set_ylabel('Daily Net Revenue (₹ thousands)')
+    ax.set_ylabel('Daily Net Revenue (Rs  thousands)')
     ax.set_title('Multi-Day Strategy Comparison: Daily Net Revenue')
     ax.legend(loc='upper left', fontsize=9)
     ax.axhline(y=0, color='black', linewidth=0.5)
@@ -199,7 +199,7 @@ def run_comparison():
         )
     
     ax.set_xlabel('Backtest Day')
-    ax.set_ylabel('Cumulative Net Revenue (₹ million)')
+    ax.set_ylabel('Cumulative Net Revenue (Rs  million)')
     ax.set_title('Cumulative Revenue Trajectories')
     ax.legend(loc='upper left', fontsize=9)
     fig.tight_layout()
@@ -208,31 +208,33 @@ def run_comparison():
     print(f"✓ Saved cumulative_revenue.png")
     
     # ─── 4. SoC Trajectory ───
-    soc_strategies = [n for n, d in strategies.items() if 'daily' in d and 'soc_terminal' in d['daily'].columns]
+    # (Disabled: Evaluation outputs show flat 100/20 resets, uninformative vs plan)
+    print("Skipping SoC trajectory chart (evaluation reset logic makes it flat).")
+    # soc_strategies = [n for n, d in strategies.items() if 'daily' in d and 'soc_terminal' in d['daily'].columns]
     
-    if soc_strategies:
-        fig, ax = plt.subplots(figsize=(14, 5))
+    # if soc_strategies:
+    #     fig, ax = plt.subplots(figsize=(14, 5))
         
-        for name in soc_strategies:
-            daily = strategies[name]['daily']
-            config = STRATEGIES[name]
-            ax.plot(
-                range(len(daily)), daily['soc_terminal'],
-                label=config['label'], color=config['color'],
-                linestyle=config['linestyle'], linewidth=1.2
-            )
+    #     for name in soc_strategies:
+    #         daily = strategies[name]['daily']
+    #         config = STRATEGIES[name]
+    #         ax.plot(
+    #             range(len(daily)), daily['soc_terminal'],
+    #             label=config['label'], color=config['color'],
+    #             linestyle=config['linestyle'], linewidth=1.2
+    #         )
         
-        ax.axhline(y=100, color='gray', linestyle=':', linewidth=1, label='Initial SoC (100 MWh)')
-        ax.axhline(y=20, color='red', linestyle=':', linewidth=1, alpha=0.5, label='Physical Floor (20 MWh)')
-        ax.set_xlabel('Backtest Day')
-        ax.set_ylabel('Terminal SoC (MWh)')
-        ax.set_title('SoC Trajectory Across Strategies')
-        ax.legend(loc='best', fontsize=8)
-        ax.set_ylim(0, 220)
-        fig.tight_layout()
-        fig.savefig(output_dir / "soc_trajectory.png")
-        plt.close(fig)
-        print(f"✓ Saved soc_trajectory.png")
+    #     ax.axhline(y=100, color='gray', linestyle=':', linewidth=1, label='Initial SoC (100 MWh)')
+    #     ax.axhline(y=20, color='red', linestyle=':', linewidth=1, alpha=0.5, label='Physical Floor (20 MWh)')
+    #     ax.set_xlabel('Backtest Day')
+    #     ax.set_ylabel('Terminal SoC (MWh)')
+    #     ax.set_title('SoC Trajectory Across Strategies')
+    #     ax.legend(loc='best', fontsize=8)
+    #     ax.set_ylim(0, 220)
+    #     fig.tight_layout()
+    #     fig.savefig(output_dir / "soc_trajectory.png")
+    #     plt.close(fig)
+    #     print(f"✓ Saved soc_trajectory.png")
     
     # ─── 5. Worst-Week Analysis ───
     print("\n═══════════════════════════════════════════════════════════════")
@@ -251,7 +253,7 @@ def run_comparison():
         worst_week_start = daily.iloc[int(worst_idx) - 6]['target_date'] if worst_idx >= 6 else daily.iloc[0]['target_date']
         worst_week_end = daily.iloc[int(worst_idx)]['target_date']
         
-        print(f"  {STRATEGIES[name]['label'][:30]:30s}  ₹{worst_week_rev:.2f}M  ({worst_week_start} → {worst_week_end})")
+        print(f"  {STRATEGIES[name]['label'][:30]:30s}  Rs {worst_week_rev:.2f}M  ({worst_week_start} → {worst_week_end})")
     
     print(f"\n✓ All outputs saved to {output_dir}")
     print("============================================================")

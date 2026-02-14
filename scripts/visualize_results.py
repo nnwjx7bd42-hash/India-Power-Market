@@ -23,7 +23,7 @@ def plot_cumulative_revenue(df_results, output_dir):
     plt.plot(dates, df_results['cum_net_revenue'], linewidth=3, color='#2ECC71', label='Cumulative Net Revenue')
     
     plt.title("Cumulative Net Revenue (Soft Terminal + SoC Chaining)\n143-Day Backtest (Feb–Jun 2025)", fontsize=16, fontweight='bold', pad=20)
-    plt.ylabel("Cumulative Revenue (₹M)", fontsize=12)
+    plt.ylabel("Cumulative Revenue (Rs M)", fontsize=12)
     plt.xlabel("Date", fontsize=12)
     plt.fill_between(dates, df_results['cum_net_revenue'], color='#2ECC71', alpha=0.15)
     
@@ -40,10 +40,10 @@ def plot_daily_distribution(df_results, output_dir):
     sns.histplot(df_results['net_revenue'] / 1e3, kde=True, color='#3498DB', bins=30, alpha=0.7)
     
     mean_rev = (df_results['net_revenue'] / 1e3).mean()
-    plt.axvline(mean_rev, color='#E74C3C', linestyle='--', linewidth=2, label=f'Mean: ₹{mean_rev:.1f}K')
+    plt.axvline(mean_rev, color='#E74C3C', linestyle='--', linewidth=2, label=f'Mean: Rs {mean_rev:.1f}K')
     
     plt.title("Daily Realized Net Revenue Distribution\n(Soft Terminal Baseline)", fontsize=16, fontweight='bold', pad=20)
-    plt.xlabel("Daily Net Revenue (₹K)", fontsize=12)
+    plt.xlabel("Daily Net Revenue (Rs K)", fontsize=12)
     plt.ylabel("Frequency", fontsize=12)
     plt.legend()
     plt.tight_layout()
@@ -66,8 +66,8 @@ def plot_expected_vs_realized(df_results, output_dir):
     plt.plot([0, max_val], [0, max_val], color='#2C3E50', linestyle='--', alpha=0.5, label='Ideal Alignment')
     
     plt.title("Expected vs. Realized Daily Revenue\n(Soft Terminal Baseline)", fontsize=16, fontweight='bold', pad=20)
-    plt.xlabel("Expected Revenue (Stochastic Optimizer) [₹K]", fontsize=12)
-    plt.ylabel("Realized Revenue (Actual Market Prices) [₹K]", fontsize=12)
+    plt.xlabel("Expected Revenue (Stochastic Optimizer) [Rs K]", fontsize=12)
+    plt.ylabel("Realized Revenue (Actual Market Prices) [Rs K]", fontsize=12)
     plt.legend()
     plt.axis('equal')
     plt.xlim(0, max_val)
@@ -91,13 +91,23 @@ def plot_efficient_frontier(df_cvar, output_dir):
     plt.plot(df_cvar['net_revenue_m'], df_cvar['worst_day_k'], marker='o', 
              linewidth=3, markersize=10, color='#9B59B6', label='Stochastic Efficient Frontier')
     
+    # Custom offsets to avoid overlap for clustered points (L=0, 0.01, 0.05)
+    offsets = {
+        0.0: (0, 15),
+        0.01: (0, -25),
+        0.05: (0, 35),
+        0.10: (0, -45)
+    }
+    
     for i, row in df_cvar.iterrows():
-        plt.annotate(f"λ={row['lambda']}", (row['net_revenue_m'], row['worst_day_k']), 
-                     textcoords="offset points", xytext=(0,15), ha='center', fontsize=10, fontweight='bold')
+        lam = row['lambda']
+        offset = offsets.get(lam, (0, 15))
+        plt.annotate(f"λ={lam}", (row['net_revenue_m'], row['worst_day_k']), 
+                     textcoords="offset points", xytext=offset, ha='center', fontsize=10, fontweight='bold')
     
     plt.title("Efficient Risk-Return Frontier (CVaR Sweep)", fontsize=16, fontweight='bold', pad=20)
-    plt.xlabel("Total Net Revenue (₹M)", fontsize=12)
-    plt.ylabel("Performance Floor (Worst-Day Return [₹K])", fontsize=12)
+    plt.xlabel("Total Net Revenue (Rs M)", fontsize=12)
+    plt.ylabel("Performance Floor (Worst-Day Return [Rs K])", fontsize=12)
     plt.grid(True, linestyle='--', alpha=0.6)
     plt.legend()
     plt.tight_layout()
@@ -202,7 +212,7 @@ def plot_forecast_fan(output_dir):
         
         plt.title(f"DAM Price Forecast Fan vs. Realized: {sample_date} {title_suffix}", fontsize=16, fontweight='bold', pad=20)
         plt.xlabel("Hour of Day", fontsize=12)
-        plt.ylabel("Price (₹/MWh)", fontsize=12)
+        plt.ylabel("Price (Rs /MWh)", fontsize=12)
         plt.xticks(range(24))
         plt.legend()
         plt.grid(True, linestyle='--', alpha=0.4)
