@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import warnings
 from pathlib import Path
 from typing import Tuple, Dict
 
@@ -73,7 +74,7 @@ class ScenarioLoader:
         Returns multi-day DAM and RTM scenarios starting from start_date.
         
         Attempts to load from pre-built multiday scenario parquets.
-        Falls back to single-day loading for Day 0.
+        Falls back to single-day loading for Day 0 with RuntimeWarning.
         
         Returns:
             {
@@ -122,7 +123,15 @@ class ScenarioLoader:
                             dam_3d[i, d, :] = dam_3d[idx, d, :]
                             rtm_3d[i, d, :] = rtm_3d[idx, d, :]
         else:
-            # Fallback: only Day 0 from per-day scenarios
+            # Fallback: only Day 0 from per-day scenarios — DEGENERATE lookahead
+            warnings.warn(
+                f"Multiday parquets not found at {multiday_dam_path}. "
+                f"Falling back to Day 0 repetition for {start_date} — "
+                f"multi-day lookahead is degenerate (Days 1-{n_days-1} = copy of Day 0). "
+                f"Run build_multiday_scenarios.py first for meaningful cross-day optimization.",
+                RuntimeWarning,
+                stacklevel=2
+            )
             day_data = self.get_day_scenarios(start_date, n_scenarios)
             dam_3d = np.zeros((n_scenarios, n_days, 24))
             rtm_3d = np.zeros((n_scenarios, n_days, 24))
@@ -133,7 +142,7 @@ class ScenarioLoader:
                 dam_3d[:, d, :] = dam_3d[:, 0, :]
                 rtm_3d[:, d, :] = rtm_3d[:, 0, :]
         
-        # Actuals for Day D
+        # Actuals for Day D (load once via single-day loader)
         day_data = self.get_day_scenarios(start_date, n_scenarios)
         
         return {
@@ -142,4 +151,3 @@ class ScenarioLoader:
             'dam_actual': day_data['dam_actual'],
             'rtm_actual': day_data['rtm_actual']
         }
-
