@@ -50,6 +50,13 @@ scenarios:
       - mcp_lag_2h
       - mcp_lag_4h
 
+# Day+1 Forecast (same architecture, separate target)
+day_plus_1:
+  enabled: true
+  markets: [dam]     # RTM D+1 comes from cross-market correlation, not direct forecast
+  reuse_hyperparams: true   # Copy best_params from corresponding Day D model
+  wmape_alert_threshold: 30.0  # Flag if validation WMAPE exceeds this
+
 paths:
   models_dir: models
   predictions_dir: Data/Predictions

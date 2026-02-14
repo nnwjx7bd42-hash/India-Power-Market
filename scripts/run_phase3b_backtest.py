@@ -16,10 +16,16 @@ from src.optimizer.scenario_loader import ScenarioLoader
 from src.optimizer.two_stage_bess import TwoStageBESS
 from src.optimizer.costs import CostModel
 
-def evaluate_actuals(bess_params, dam_schedule, dam_actual, rtm_actual, cost_model: CostModel = None, lambda_dev=0.0):
+def evaluate_actuals(bess_params, dam_schedule, dam_actual, rtm_actual, cost_model: CostModel = None, lambda_dev=0.0, force_terminal_mode=None):
     """
     Rigorous evaluation: Given Stage 1 DAM schedule, solve for optimal RTM recourse 
     using ACTUAL realized prices.
+    
+    Args:
+        force_terminal_mode: Override terminal constraint. Options:
+            None: use bess_params.soc_terminal_mode as-is
+            'hard': soc[24] >= soc_terminal_min_mwh (100 MWh)
+            'physical': soc[24] >= e_min_mwh only (20 MWh)
     """
     prob = pulp.LpProblem("RTM_Recourse_Actuals", pulp.LpMaximize)
     
@@ -39,10 +45,13 @@ def evaluate_actuals(bess_params, dam_schedule, dam_actual, rtm_actual, cost_mod
     for t in range(24):
         prob += y[t] == y_d[t] - y_c[t]
         prob += soc[t+1] == soc[t] + (y_c[t] * bess_params.eta_charge) - (y_d[t] / bess_params.eta_discharge)
-        
-    if bess_params.soc_terminal_mode == "hard":
+    # Terminal constraint logic
+    effective_mode = force_terminal_mode if force_terminal_mode else bess_params.soc_terminal_mode
+    if effective_mode == "hard":
         prob += soc[24] >= bess_params.soc_terminal_min_mwh
-    # else: soft terminal — physical bounds still enforced via variable bounds
+    elif effective_mode == "physical":
+        pass  # physical floor already enforced via soc variable lb = e_min_mwh
+    # else: "soft" — physical bounds still enforced via variable bounds
     
     # Revenue Calculation: R = sum( p_dam * x + p_rtm * (y - x) )
     revenue = pulp.lpSum([(dam_actual[t] - rtm_actual[t]) * dam_schedule[t] + rtm_actual[t] * y[t] for t in range(24)])

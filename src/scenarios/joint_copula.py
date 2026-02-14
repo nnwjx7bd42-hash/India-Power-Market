@@ -190,3 +190,76 @@ def inverse_cdf_vectorized(u: np.ndarray, quantiles_dict: Dict[str, float]) -> n
     
     # We can use the existing inverse_cdf which already handles extrapolation
     return inverse_cdf(u, q_dict_sorted)
+
+
+def estimate_cross_day_rho(dam_val_df: pd.DataFrame) -> float:
+    """
+    Estimate day-to-day price correlation from validation set PIT residuals.
+    
+    Method: Take the daily average z-score (mean of 24 hourly z-scores)
+    and compute lag-1 autocorrelation.
+    
+    Returns: scalar rho (typically 0.3-0.6 for Indian power markets)
+    """
+    dam_val_df = dam_val_df.copy()
+    dam_val_df['target_date'] = dam_val_df['target_date'].astype(str)
+    
+    # Compute PIT → z-score for each row
+    z_data = []
+    for _, row in dam_val_df.iterrows():
+        q_dict = {k: row[k] for k in ['q10', 'q25', 'q50', 'q75', 'q90']}
+        act = row.get('actual_mcp', row.get('target_mcp_rs_mwh'))
+        u = compute_pit(act, q_dict)
+        z = scipy.stats.norm.ppf(u)
+        z_data.append({'date': row['target_date'], 'hour': row['target_hour'], 'z': z})
+    
+    z_df = pd.DataFrame(z_data)
+    
+    # Average z-score per day
+    daily_z = z_df.groupby('date')['z'].mean().sort_index()
+    
+    # Lag-1 autocorrelation
+    if len(daily_z) < 3:
+        return 0.3  # fallback
+    
+    rho = daily_z.autocorr(lag=1)
+    
+    # Clip to reasonable range
+    rho = float(np.clip(rho, 0.0, 0.95))
+    
+    return rho
+
+
+def generate_multiday_latent(n_scenarios: int, n_days: int, 
+                              dam_corr_24x24: np.ndarray,
+                              cross_day_rho: float,
+                              rng: np.random.Generator) -> np.ndarray:
+    """
+    Generate (n_scenarios, n_days * 24) correlated Gaussian latent vectors.
+    
+    Day-internal correlation: existing 24x24 Ledoit-Wolf matrix (via Cholesky)
+    Day-to-day correlation: AR(1) process with rho = cross_day_rho
+    
+    z_day0 = L_within @ epsilon_0
+    z_day1 = cross_day_rho * mean(z_day0) + sqrt(1 - rho²) * L_within @ epsilon_1
+    """
+    L_within = np.linalg.cholesky(dam_corr_24x24)
+    z_all = np.zeros((n_scenarios, n_days * 24))
+    
+    # Day 0
+    eps_0 = rng.standard_normal((n_scenarios, 24))
+    z_all[:, 0:24] = eps_0 @ L_within.T
+    
+    # Days 1..n_days-1: AR(1) between daily average, within-day structure preserved
+    for d in range(1, n_days):
+        eps_d = rng.standard_normal((n_scenarios, 24))
+        z_within = eps_d @ L_within.T
+        # Carry forward correlation via daily mean
+        z_prev_mean = z_all[:, (d-1)*24:d*24].mean(axis=1, keepdims=True)
+        z_all[:, d*24:(d+1)*24] = (
+            cross_day_rho * z_prev_mean 
+            + np.sqrt(1 - cross_day_rho**2) * z_within
+        )
+    
+    return z_all
+

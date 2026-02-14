@@ -1,0 +1,13 @@
+{
+  "n_days": 143,
+  "total_expected_revenue": 401210449.60913897,
+  "total_realized_revenue": 240486060.8582255,
+  "total_net_revenue": 202787396.77893716,
+  "avg_daily_net": 1418093.6837687914,
+  "std_daily_net": 707938.9190714573,
+  "min_daily_net": -104009.78914972633,
+  "max_daily_net": 4284278.899996256,
+  "avg_terminal_soc": 20.0,
+  "min_terminal_soc": 20.0,
+  "max_terminal_soc": 20.0
+}

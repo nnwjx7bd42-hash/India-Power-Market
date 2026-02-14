@@ -8,7 +8,9 @@ from pathlib import Path
 # Add project root to sys.path
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
-from src.scenarios.joint_copula import fit_cross_market_rho, estimate_dam_copula_correlation, generate_correlated_uniforms, inverse_cdf_vectorized
+from src.scenarios.joint_copula import (fit_cross_market_rho, estimate_dam_copula_correlation,
+                                        generate_correlated_uniforms, inverse_cdf_vectorized,
+                                        estimate_cross_day_rho)
 
 def run_fitting():
     print("============================================================")
@@ -39,6 +41,13 @@ def run_fitting():
     print("Estimating DAM 24x24 copula matrix...")
     dam_corr = estimate_dam_copula_correlation(dam_val)
     
+    # Cross-Day Correlation (for multi-day scenarios)
+    print("Estimating cross-day correlation (rho)...")
+    cross_day_rho = estimate_cross_day_rho(dam_val)
+    print(f"Cross-day rho: {cross_day_rho:.3f}")
+    if cross_day_rho < 0.1 or cross_day_rho > 0.9:
+        print(f"⚠️ WARNING: cross_day_rho={cross_day_rho:.3f} outside expected [0.1, 0.9] range")
+    
     # Prepare result
     val_dates = dam_val['target_date'].unique()
     
@@ -50,6 +59,7 @@ def run_fitting():
         "n_common_dates": rho_result['n_common_dates'],
         "shrinkage_factor": rho_result['shrinkage_factor'],
         "dam_copula_correlation": dam_corr.tolist(),
+        "cross_day_rho": cross_day_rho,
         "validation_period": f"{min(val_dates)} to {max(val_dates)}",
     }
     
@@ -78,6 +88,9 @@ def run_fitting():
     print(f"Mean off-diagonal: {np.mean(off_diag):.3f}")
     print(f"Min off-diagonal:  {np.min(off_diag):.3f}")
     print(f"Max off-diagonal:  {np.max(off_diag):.3f}")
+    
+    print(f"\nCross-Day Correlation:")
+    print(f"rho: {cross_day_rho:.3f}")
     
     print(f"\nSaved to: results/joint_copula_params.json")
     print("============================================================")

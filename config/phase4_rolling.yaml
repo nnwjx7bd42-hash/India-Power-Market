@@ -1,0 +1,14 @@
+# Phase 5.2: Rolling Horizon Settings (48-hour window)
+solver: "CBC"
+n_scenarios: 50        # Reduced from 100 — LP is 2× larger
+lambda_risk: 0.0
+lambda_dev: 10.0
+dev_max_mw: 50.0
+risk_alpha: 0.1
+lookahead_days: 2      # 48-hour window
+paths:
+  scenarios_dam: "Data/Predictions/joint_dam_scenarios_backtest.parquet"
+  scenarios_rtm: "Data/Predictions/joint_rtm_scenarios_backtest.parquet"
+  actuals_dam: "Data/Predictions/dam_quantiles_backtest.csv"
+  actuals_rtm: "Data/Predictions/rtm_quantiles_backtest.csv"
+  results_dir: "Data/Results/phase4_rolling"
