@@ -1,0 +1,6 @@
+Strategy,Days,Total Net (₹M),Avg Daily (₹K),Std Daily (₹K),Worst Day (₹K),Uplift vs Baseline,Avg SoC₂₄,Min SoC₂₄
+Baseline (Hard Terminal),143,204.40,1429.4,0.0,0.0,+0.0%,,
+48h Rolling (Option A),143,196.88,1376.8,721.0,-103.6,-3.7%,100,100
+48h Rolling (Option B),143,202.79,1418.1,707.9,-104.0,-0.8%,20,20
+7-Day Extensive (Option A),143,195.19,1365.0,731.2,-110.7,-4.5%,100,100
+7-Day Extensive (Option B),143,200.61,1402.9,717.0,-120.8,-1.9%,20,20

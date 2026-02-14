@@ -1,0 +1,18 @@
+{
+  "n_days": 143,
+  "n_lookahead_days": 7,
+  "n_scenarios": 30,
+  "total_expected_revenue": 1524868741.1218052,
+  "total_realized_revenue": 238309833.68199843,
+  "total_net_revenue": 200610244.83009547,
+  "avg_daily_net": 1402868.8449657026,
+  "std_daily_net": 716963.494744095,
+  "min_daily_net": -120779.61000317743,
+  "max_daily_net": 4294127.442078549,
+  "avg_terminal_soc": 20.0,
+  "min_terminal_soc": 20.0,
+  "max_terminal_soc": 20.0,
+  "avg_solve_time_s": 0.8393636099942081,
+  "max_solve_time_s": 1.3106708526611328,
+  "total_compute_time_h": 0.0333413878414366
+}
