@@ -45,6 +45,9 @@ All results represent **actual realized performance** against historical market 
 ![Daily Revenue Overlay](results/multiday_comparison/daily_revenue_overlay.png)
 *Daily net revenue comparison across strategies.*
 
+![SoC Chaining Trajectory](results/charts/soc_chaining_trajectory.png)
+*Overnight SoC chaining — the optimizer’s chosen terminal SoC each day, carried forward as the next day’s initial state. Parsed from daily result JSONs.*
+
 ---
 
 ## 3. Financial Waterfall (Soft Terminal Baseline)
@@ -121,6 +124,9 @@ The CVaR frontier is **remarkably flat** from λ=0.00 to λ=0.30 — worst-day d
 
 ### Expected vs Realized
 ![Expected vs Realized](results/charts/expected_vs_realized.png)
+
+### SoC Chaining Trajectory
+![SoC Chaining](results/charts/soc_chaining_trajectory.png)
 
 ### Sample Dispatch (April 10, 2025)
 ![Forecast Fan](results/charts/forecast_fan_sample_day.png)
