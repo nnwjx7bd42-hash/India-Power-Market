@@ -224,60 +224,63 @@ def plot_forecast_fan(output_dir):
         print(f"Error plotting fan: {e}")
         traceback.print_exc()
 
-def plot_soc_chaining(output_dir):
-    print("Plotting SoC chaining trajectory...")
+def plot_soc_heatmap(output_dir):
+    print("Plotting SoC intra-day heatmap...")
     daily_dir = Path("results/phase3b/daily")
-    records = []
-    
     if not daily_dir.exists():
-        print(f"Skipping SoC chaining: {daily_dir} not found.")
+        print(f"Skipping heatmap: {daily_dir} not found.")
         return
 
-    # Sort files by date in filename
     files = sorted(daily_dir.glob("result_*.json"))
-    
     if not files:
-        print("Skipping SoC chaining: No result_*.json files found.")
+        print("Skipping heatmap: No result_*.json files found.")
         return
 
+    data = []
+    dates = []
+    
     for f in files:
         try:
             with open(f) as fh:
                 d = json.load(fh)
-            # Ensure keys exist
-            if "soc_initial" in d and "soc_terminal" in d:
-                records.append({
-                    "date": d.get("date", f.stem.replace("result_", "")), # Fallback to filename if date missing
-                    "soc_initial": d["soc_initial"],
-                    "soc_terminal": d["soc_terminal"],
-                })
-        except Exception: 
-            print(f"Error reading {f}")
+            if "soc_realized" in d:
+                # soc_realized has 25 points (0..24). We use 0..23 for heatmap rows
+                # or we can plot 0..24. Let's use 0..24 for full cycle visibility
+                row = d["soc_realized"]
+                if len(row) >= 24:
+                    data.append(row[:25]) # Ensure we take up to 25
+                    dates.append(d.get("date", f.stem.replace("result_", "")))
+        except Exception:
             continue
-            
-    if not records:
-        print("Skipping SoC chaining: No valid records found.")
+
+    if not data:
+        print("Skipping heatmap: No valid data found.")
         return
 
-    df = pd.DataFrame(records).sort_values("date")
-    dates = pd.to_datetime(df["date"])
-
-    plt.figure(figsize=(14, 5))
-    plt.plot(dates, df["soc_terminal"], lw=2, color="#9B59B6",
-            label="Terminal SoC (optimizer choice)", marker=".", ms=3)
-    plt.plot(dates, df["soc_initial"], lw=1.5, color="#3498DB",
-            alpha=0.6, label="Initial SoC (chained)")
-    plt.axhline(100, color="#95A5A6", ls=":", lw=1, label="Midpoint (100 MWh)")
-    plt.axhline(20, color="#E74C3C", ls=":", lw=1, label="Floor (20 MWh)")
-    plt.axhline(180, color="#E74C3C", ls=":", lw=1, alpha=0.5, label="Cap (180 MWh)")
-    plt.title("SoC Chaining Trajectory (Soft Terminal Baseline)", fontsize=16, fontweight='bold', pad=20)
-    plt.ylabel("State of Charge (MWh)", fontsize=12)
-    plt.ylim(0, 210)
-    plt.legend(loc="upper right", fontsize=9)
-    plt.grid(True, ls="--", alpha=0.4)
-    plt.xticks(rotation=45)
+    # Create Matrix: Rows=Dates, Cols=Hours
+    # Pad if length differs? Assuming 25 points.
+    # If some have 24, we pad.
+    max_len = max(len(r) for r in data)
+    matrix = np.array([r + [np.nan]*(max_len-len(r)) for r in data])
+    
+    # Plot
+    plt.figure(figsize=(15, 8))
+    # We want Date on Y, Hour on X
+    # sns.heatmap requires dataframe or matrix
+    df_heatmap = pd.DataFrame(matrix, index=dates, columns=range(max_len))
+    
+    # Use a diverging or sequential colormap. SoC is 0..200. 'viridis' or 'mako' is good.
+    # robust=True handles outliers
+    ax = sns.heatmap(df_heatmap, cmap="mako", cbar_kws={'label': 'SoC (MWh)'}, 
+                     xticklabels=4, yticklabels=14) # Label every 4th hour, every 14th day
+    
+    plt.title("Intra-day SoC Heatmap: Realized Cycling Pattern\n(Soft Terminal Baseline)", fontsize=16, fontweight='bold', pad=20)
+    plt.xlabel("Hour of Day (0=Start, 24=End)", fontsize=12)
+    plt.ylabel("Date", fontsize=12)
+    plt.yticks(rotation=0)
+    plt.xticks(rotation=0)
     plt.tight_layout()
-    plt.savefig(output_dir / "soc_chaining_trajectory.png", dpi=150)
+    plt.savefig(output_dir / "soc_heatmap.png", dpi=150)
     plt.close()
 
 def main():
@@ -337,9 +340,9 @@ def main():
         plot_forecast_fan(output_dir)
     except Exception: traceback.print_exc()
     
-    # SoC Chaining Plot
+    # SoC Heatmap
     try:
-        plot_soc_chaining(output_dir)
+        plot_soc_heatmap(output_dir)
     except Exception: traceback.print_exc()
         
     print("\n✅ Chart regeneration complete.")
