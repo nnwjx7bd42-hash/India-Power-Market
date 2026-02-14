@@ -224,6 +224,62 @@ def plot_forecast_fan(output_dir):
         print(f"Error plotting fan: {e}")
         traceback.print_exc()
 
+def plot_soc_chaining(output_dir):
+    print("Plotting SoC chaining trajectory...")
+    daily_dir = Path("results/phase3b/daily")
+    records = []
+    
+    if not daily_dir.exists():
+        print(f"Skipping SoC chaining: {daily_dir} not found.")
+        return
+
+    # Sort files by date in filename
+    files = sorted(daily_dir.glob("result_*.json"))
+    
+    if not files:
+        print("Skipping SoC chaining: No result_*.json files found.")
+        return
+
+    for f in files:
+        try:
+            with open(f) as fh:
+                d = json.load(fh)
+            # Ensure keys exist
+            if "soc_initial" in d and "soc_terminal" in d:
+                records.append({
+                    "date": d.get("date", f.stem.replace("result_", "")), # Fallback to filename if date missing
+                    "soc_initial": d["soc_initial"],
+                    "soc_terminal": d["soc_terminal"],
+                })
+        except Exception: 
+            print(f"Error reading {f}")
+            continue
+            
+    if not records:
+        print("Skipping SoC chaining: No valid records found.")
+        return
+
+    df = pd.DataFrame(records).sort_values("date")
+    dates = pd.to_datetime(df["date"])
+
+    plt.figure(figsize=(14, 5))
+    plt.plot(dates, df["soc_terminal"], lw=2, color="#9B59B6",
+            label="Terminal SoC (optimizer choice)", marker=".", ms=3)
+    plt.plot(dates, df["soc_initial"], lw=1.5, color="#3498DB",
+            alpha=0.6, label="Initial SoC (chained)")
+    plt.axhline(100, color="#95A5A6", ls=":", lw=1, label="Midpoint (100 MWh)")
+    plt.axhline(20, color="#E74C3C", ls=":", lw=1, label="Floor (20 MWh)")
+    plt.axhline(180, color="#E74C3C", ls=":", lw=1, alpha=0.5, label="Cap (180 MWh)")
+    plt.title("SoC Chaining Trajectory (Soft Terminal Baseline)", fontsize=16, fontweight='bold', pad=20)
+    plt.ylabel("State of Charge (MWh)", fontsize=12)
+    plt.ylim(0, 210)
+    plt.legend(loc="upper right", fontsize=9)
+    plt.grid(True, ls="--", alpha=0.4)
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    plt.savefig(output_dir / "soc_chaining_trajectory.png", dpi=150)
+    plt.close()
+
 def main():
     print("============================================================")
     print("PHASE 5: REGENERATING BACKTEST VISUALIZATIONS")
@@ -279,6 +335,11 @@ def main():
     # Fan Plot
     try:
         plot_forecast_fan(output_dir)
+    except Exception: traceback.print_exc()
+    
+    # SoC Chaining Plot
+    try:
+        plot_soc_chaining(output_dir)
     except Exception: traceback.print_exc()
         
     print("\n✅ Chart regeneration complete.")
