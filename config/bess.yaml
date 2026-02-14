@@ -1,7 +1,7 @@
 # BESS Physical Parameters
 p_max_mw: 50.0
-e_max_mwh: 180.0
-e_min_mwh: 20.0
+e_max_mwh: 180.0  # 200 MWh nameplate, 90% ceiling = 180 MWh operational max
+e_min_mwh: 20.0   # 10% floor risk buffer
 eta_charge: 0.9487
 eta_discharge: 0.9487
 soc_initial_mwh: 100.0
