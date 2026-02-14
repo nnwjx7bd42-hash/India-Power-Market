@@ -40,7 +40,9 @@ def evaluate_actuals(bess_params, dam_schedule, dam_actual, rtm_actual, cost_mod
         prob += y[t] == y_d[t] - y_c[t]
         prob += soc[t+1] == soc[t] + (y_c[t] * bess_params.eta_charge) - (y_d[t] / bess_params.eta_discharge)
         
-    prob += soc[24] >= bess_params.soc_terminal_min_mwh
+    if bess_params.soc_terminal_mode == "hard":
+        prob += soc[24] >= bess_params.soc_terminal_min_mwh
+    # else: soft terminal — physical bounds still enforced via variable bounds
     
     # Revenue Calculation: R = sum( p_dam * x + p_rtm * (y - x) )
     revenue = pulp.lpSum([(dam_actual[t] - rtm_actual[t]) * dam_schedule[t] + rtm_actual[t] * y[t] for t in range(24)])
@@ -131,8 +133,26 @@ def run_backtest(args):
     print(f"Running backtest for {len(dates)} days...")
     
     backtest_results = []
+    prev_soc = bess_params.soc_initial_mwh  # SoC chaining for multi-day
     
     for i, date in enumerate(dates):
+        # --- Multi-day SoC: update initial SoC from previous day ---
+        bess_params.soc_initial_mwh = prev_soc
+        
+        # --- Multi-day SoC: estimate continuation value for soft terminal ---
+        if bess_params.soc_terminal_mode == "soft" and i < len(dates) - 1:
+            next_data = loader.get_day_scenarios(dates[i + 1], n_scenarios=20)
+            spread_per_scenario = np.max(next_data['dam'], axis=1) - np.min(next_data['dam'], axis=1)
+            expected_spread = np.mean(spread_per_scenario)
+            bess_params.soc_terminal_value_rs_mwh = max(0, (
+                expected_spread * bess_params.eta_charge * bess_params.eta_discharge
+                - bess_params.iex_fee_rs_mwh * 2   # round-trip IEX cost
+                - bess_params.degradation_cost_rs_mwh  # degradation
+                - 135.0 * 2  # round-trip DSM friction
+            ))
+        else:
+            bess_params.soc_terminal_value_rs_mwh = 0.0  # last day or hard mode
+        
         print(f"[{i+1}/{len(dates)}] {date}...", end=" ", flush=True)
         
         day_data = loader.get_day_scenarios(date, n_scenarios=config['n_scenarios'])
@@ -170,6 +190,9 @@ def run_backtest(args):
             "status": res['status'],
             "expected_revenue": expected_rev,
             "realized_revenue": realized_rev,
+            "soc_initial": prev_soc,
+            "soc_terminal": eval_res['soc'][-1],
+            "continuation_value": bess_params.soc_terminal_value_rs_mwh,
             "dam_schedule": res['dam_schedule'],
             "rtm_realized_schedule": eval_res['rtm_schedule'],
             "soc_realized": eval_res['soc'],
@@ -177,6 +200,10 @@ def run_backtest(args):
             "actual_rtm_prices": day_data['rtm_actual'].tolist(),
             "scenarios": res['scenarios']
         }
+        
+        # --- Multi-day SoC: carry terminal SoC forward ---
+        if eval_res is not None:
+            prev_soc = eval_res['soc'][-1]
         
         with open(daily_results_dir / f"result_{date}.json", 'w') as f:
             json.dump(daily_output, f, indent=2, default=lambda x: float(x) if isinstance(x, np.generic) else x)

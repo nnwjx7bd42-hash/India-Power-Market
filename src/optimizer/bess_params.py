@@ -14,6 +14,8 @@ class BESSParams:
     degradation_cost_rs_mwh: float
     iex_fee_rs_mwh: float
     max_cycles_per_day: Optional[float] = None
+    soc_terminal_mode: str = "hard"              # "hard" or "soft"
+    soc_terminal_value_rs_mwh: float = 0.0       # ₹/MWh continuation value for soft terminal
 
     @classmethod
     def from_yaml(cls, path: str):

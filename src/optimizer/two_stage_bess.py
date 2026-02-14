@@ -95,8 +95,16 @@ class TwoStageBESS:
             dev_pos[s][t] + dev_neg[s][t] for s in range(n_scenarios) for t in range(24)
         ])
 
-        # Composite Objective: Maximize E[R] + lambda * CVaR
-        objective = avg_revenue + self.lambda_risk * cvar_expr - stability_penalty
+        # Soft terminal: value stored energy at next-day expected spread
+        terminal_value_expr = 0
+        if self.params.soc_terminal_mode == "soft" and self.params.soc_terminal_value_rs_mwh > 0:
+            terminal_value_expr = pulp.lpSum([
+                self.params.soc_terminal_value_rs_mwh * soc[s][24]
+                for s in range(n_scenarios)
+            ]) / n_scenarios
+
+        # Composite Objective: Maximize E[R] + terminal_value + lambda * CVaR - deviation_penalty
+        objective = avg_revenue + terminal_value_expr + self.lambda_risk * cvar_expr - stability_penalty
         prob.setObjective(objective)
 
         # --- Constraints ---
@@ -122,7 +130,9 @@ class TwoStageBESS:
                 total_discharge += y_d[s][t]
                 
             # Terminal
-            prob += soc[s][24] >= self.params.soc_terminal_min_mwh
+            if self.params.soc_terminal_mode == "hard":
+                prob += soc[s][24] >= self.params.soc_terminal_min_mwh
+            # else: soft terminal — physical bounds (e_min_mwh, e_max_mwh) still apply via variable bounds
             
             # Optional Cycling Constraint
             if self.params.max_cycles_per_day is not None:

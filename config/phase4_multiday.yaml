@@ -1,0 +1,15 @@
+# Phase 5.3: Multi-Day Extensive Form Settings
+solver: "CBC"
+n_scenarios: 30          # 30 scenarios × 7 days = 210 day-scenarios in LP
+n_lookahead_days: 7
+lambda_risk: 0.0
+lambda_dev: 10.0
+dev_max_mw: 50.0
+risk_alpha: 0.1
+solver_time_limit: 600   # 10 min per solve
+paths:
+  scenarios_dam: "Data/Predictions/joint_dam_scenarios_backtest.parquet"
+  scenarios_rtm: "Data/Predictions/joint_rtm_scenarios_backtest.parquet"
+  actuals_dam: "Data/Predictions/dam_quantiles_backtest.csv"
+  actuals_rtm: "Data/Predictions/rtm_quantiles_backtest.csv"
+  results_dir: "Data/Results/phase4_multiday"
