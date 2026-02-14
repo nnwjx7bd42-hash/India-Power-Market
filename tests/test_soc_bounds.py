@@ -37,6 +37,35 @@ def test_soc_bounds_respected():
         assert soc_trajectory[hour] >= params.e_min_mwh - 1e-5, f"SoC below min at hour {hour}: {soc_trajectory[hour]}"
         assert soc_trajectory[hour] <= params.e_max_mwh + 1e-5, f"SoC above max at hour {hour}: {soc_trajectory[hour]}"
 
+    # VISUAL PROOF (Generated on request)
+    try:
+        import matplotlib.pyplot as plt
+        fig, ax1 = plt.subplots(figsize=(10, 6))
+        
+        hours = range(24)
+        ax1.set_xlabel('Hour')
+        ax1.set_ylabel('Price (Rs/MWh)', color='tab:red')
+        ax1.step(hours, dam_prices.flatten(), where='post', color='tab:red', label='Extreme Pricing', alpha=0.6)
+        ax1.tick_params(axis='y', labelcolor='tab:red')
+        
+        ax2 = ax1.twinx()
+        ax2.set_ylabel('SoC (MWh)', color='tab:purple')
+        ax2.plot(range(25), soc_trajectory, color='tab:purple', linewidth=2, label='SoC Response', marker='o')
+        ax2.tick_params(axis='y', labelcolor='tab:purple')
+        ax2.set_ylim(0, 200)
+        
+        # Draw Bounds
+        ax2.axhline(params.e_min_mwh, color='k', linestyle='--', label='Min Limit (20)')
+        ax2.axhline(params.e_max_mwh, color='k', linestyle='--', label='Max Limit (180)')
+        
+        plt.title('Optimizer Stress Test: Extreme Pricing vs SoC Bounds')
+        fig.tight_layout()
+        plt.savefig('tests/stress_test_soc.png')
+        plt.close()
+    except ImportError:
+        pass
+
+
 
 def test_ramp_rate_constraints():
     """Verify ramp rates don't exceed ±50 MW/hour."""
