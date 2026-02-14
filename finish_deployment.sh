@@ -1,4 +1,7 @@
 #!/bin/bash
+# finish_deployment.sh
+# Run after backtests complete to regenerate charts and push to GitHub
+# Usage: ./finish_deployment.sh
 set -e
 
 echo "============================================================"
