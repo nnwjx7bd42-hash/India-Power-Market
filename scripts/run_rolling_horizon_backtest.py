@@ -29,8 +29,15 @@ def run_rolling_backtest(args):
     print("============================================================")
     
     bess_params = BESSParams.from_yaml("config/bess.yaml")
-    with open("config/phase4_rolling.yaml", 'r') as f:
+    config_path = args.config if hasattr(args, 'config') and args.config else "config/phase4_rolling.yaml"
+    with open(config_path, 'r') as f:
         config = yaml.safe_load(f)
+    
+    # Config-driven eval terminal mode: option_a → hard, option_b → physical
+    eval_mode_map = {'option_a': 'hard', 'option_b': 'physical'}
+    eval_terminal_mode = eval_mode_map.get(config.get('eval_terminal_mode', 'option_a'), 'hard')
+    print(f"Eval terminal mode: {config.get('eval_terminal_mode', 'option_a')} → force_terminal_mode={eval_terminal_mode}")
+    
     
     loader = ScenarioLoader(
         dam_path=config['paths']['scenarios_dam'],
@@ -89,19 +96,15 @@ def run_rolling_backtest(args):
             continue
         
         # Evaluate Day 1 against actuals
-        # Force hard terminal for evaluation — the 48h optimizer handles
-        # overnight value internally; evaluation should enforce SoC floor.
-        saved_mode = bess_params.soc_terminal_mode
-        bess_params.soc_terminal_mode = "hard"
         eval_res = evaluate_actuals(
             bess_params,
             res['dam_schedule'],
             day1_data['dam_actual'],
             day1_data['rtm_actual'],
             cost_model=cost_model,
-            lambda_dev=config['lambda_dev']
+            lambda_dev=config['lambda_dev'],
+            force_terminal_mode=eval_terminal_mode
         )
-        bess_params.soc_terminal_mode = saved_mode
         
         if eval_res is None:
             print("EVAL FAILED")
@@ -150,6 +153,11 @@ def run_rolling_backtest(args):
             "soc_initial": daily_output['soc_initial'],
             "soc_terminal": daily_output['soc_terminal']
         })
+        
+        # SoC drift monitor: warn if < 50 MWh for 3+ consecutive days
+        recent_socs = [r['soc_terminal'] for r in backtest_results[-3:]]
+        if len(recent_socs) >= 3 and all(s < 50.0 for s in recent_socs):
+            print(f"  ⚠️ SoC DRIFT WARNING: SoC < 50 MWh for {len(recent_socs)} consecutive days")
     
     # Save Summary
     results_df = pd.DataFrame(backtest_results)
@@ -187,5 +195,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--day', type=str, help='Run for a specific date (YYYY-MM-DD)')
     parser.add_argument('--limit', type=int, help='Limit number of days to run')
+    parser.add_argument('--config', type=str, default='config/phase4_rolling.yaml',
+                        help='Config file path')
     args = parser.parse_args()
     run_rolling_backtest(args)

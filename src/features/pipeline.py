@@ -318,6 +318,96 @@ def build_all_features(config_path):
             drop_cols = ['snapshot_ts', 'delivery_start_ist_x', 'delivery_start_ist_y', 'lookup_ts']
             final_feats = final_feats.drop([c for c in drop_cols if c in final_feats.columns], axis=1)
 
+            # ═══════════════════════════════════════════════════════
+            # DAM Day+1 Feature Construction
+            # Same D-1 08:00 snapshot, shifted target forward by 1 day.
+            # Causality: all features from D-1, targets from D+1.
+            # ═══════════════════════════════════════════════════════
+            print("\n─── Building DAM Day+1 Features ───")
+
+            # Start from the Day D expanded frame (before target merge)
+            # Re-use 'expanded' which has shared feats + calendar + mcp_same_hour_yesterday + target
+            expanded_d1 = expanded.copy()
+
+            # Shift target_date forward by 1 day
+            expanded_d1['target_date'] = (
+                pd.to_datetime(expanded_d1['target_date']) + pd.Timedelta(days=1)
+            ).dt.strftime('%Y-%m-%d')
+
+            # Reconstruct target_ts for D+1
+            target_ts_d1 = (
+                pd.to_datetime(expanded_d1['target_date'])
+                + pd.to_timedelta(expanded_d1['target_hour'], unit='h')
+            )
+            target_ts_d1 = target_ts_d1.dt.tz_localize('Asia/Kolkata', ambiguous='infer', nonexistent='shift_forward')
+            expanded_d1['target_ts'] = target_ts_d1
+
+            # Re-merge calendar features for D+1 dates
+            cal_cols_to_drop = [c for c in expanded_d1.columns if c.startswith('cal_')]
+            expanded_d1 = expanded_d1.drop(columns=cal_cols_to_drop)
+            expanded_d1 = pd.merge(
+                expanded_d1, cal_data,
+                left_on='target_ts', right_on='delivery_start_ist',
+                how='left'
+            )
+            if 'delivery_start_ist' in expanded_d1.columns and 'target_ts' in expanded_d1.columns:
+                expanded_d1 = expanded_d1.drop(columns=['delivery_start_ist'], errors='ignore')
+
+            # mcp_same_hour_yesterday for D+1:
+            # At D-1 09:00, the most recent same-hour price is (D-1, H) for ALL hours.
+            # D+1 - 2 days = D-1, so lookup_ts = target_ts - 2 days.
+            ts_d_minus_1 = expanded_d1['target_ts'] - pd.Timedelta(days=2)
+            lookup_d1 = pd.DataFrame({'lookup_ts': ts_d_minus_1}, index=expanded_d1.index)
+            merged_d1 = pd.merge(
+                lookup_d1, price_lookup_df,
+                left_on='lookup_ts', right_on='delivery_start_ist', how='left'
+            )
+            expanded_d1['mcp_same_hour_yesterday'] = merged_d1['mcp_rs_mwh'].values
+
+            # Target for D+1: MCP at (D+1, H)
+            # Drop any existing target column first
+            expanded_d1 = expanded_d1.drop(columns=['target_mcp_rs_mwh'], errors='ignore')
+            expanded_d1 = pd.merge(
+                expanded_d1,
+                price_lookup_df.rename(columns={'mcp_rs_mwh': 'target_mcp_rs_mwh'}),
+                left_on='target_ts', right_on='delivery_start_ist',
+                how='left'
+            )
+
+            # Cleanup D+1
+            final_feats_d1 = expanded_d1.set_index('target_ts')
+            final_feats_d1.index.name = 'delivery_start_ist'
+            final_feats_d1['target_date'] = final_feats_d1['target_date'].astype(str)
+            drop_cols_d1 = ['snapshot_ts', 'delivery_start_ist_x', 'delivery_start_ist_y',
+                            'delivery_start_ist', 'lookup_ts']
+            final_feats_d1 = final_feats_d1.drop(
+                [c for c in drop_cols_d1 if c in final_feats_d1.columns], axis=1
+            )
+
+            # Drop NaN, enforce complete days, split, validate, save — same as Day D
+            null_counts_d1 = final_feats_d1.isnull().sum()
+            if null_counts_d1.sum() > 0:
+                nonnull = null_counts_d1[null_counts_d1 > 0]
+                print(f"D+1 NaN counts: {dict(nonnull)}")
+            before_d1 = len(final_feats_d1)
+            final_feats_d1 = final_feats_d1.dropna()
+            print(f"D+1: Dropped {before_d1 - len(final_feats_d1)} rows due to warmup/NaNs")
+
+            date_counts_d1 = final_feats_d1.groupby('target_date').size()
+            valid_dates_d1 = date_counts_d1[date_counts_d1 == 24].index
+            final_feats_d1 = final_feats_d1[final_feats_d1['target_date'].isin(valid_dates_d1)]
+
+            print("Splitting D+1...")
+            splits_d1 = split_by_date(final_feats_d1, config, date_col='target_date')
+            validate_no_leakage(splits_d1, date_col='target_date')
+
+            print("Saving D+1 Parquets...")
+            for split_name, df_split in splits_d1.items():
+                filename = f"dam_d1_features_{split_name}.parquet"
+                out_path = features_dir / filename
+                df_split.to_parquet(out_path)
+                print(f"Saved {filename}: {df_split.shape}")
+
         # h. Drop NaN (Warmup)
         print("Dropping NaNs...")
         # DEBUG: Check which columns have NaNs
