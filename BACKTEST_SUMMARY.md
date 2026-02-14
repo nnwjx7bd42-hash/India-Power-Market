@@ -45,9 +45,6 @@ All results represent **actual realized performance** against historical market 
 ![Daily Revenue Overlay](results/multiday_comparison/daily_revenue_overlay.png)
 *Daily net revenue comparison across strategies.*
 
-![SoC Trajectory](results/multiday_comparison/soc_trajectory.png)
-*Terminal SoC (MWh) trajectory — Option A stays at 100, Option B drops to physical floor (20).*
-
 ---
 
 ## 3. Financial Waterfall (Soft Terminal Baseline)
