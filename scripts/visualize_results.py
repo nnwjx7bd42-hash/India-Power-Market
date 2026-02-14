@@ -6,25 +6,26 @@ import json
 import yaml
 from pathlib import Path
 import os
+import traceback
 
 # Setup themes
 sns.set_theme(style="whitegrid", palette="muted")
 plt.rcParams['figure.dpi'] = 150
 plt.rcParams['font.family'] = 'sans-serif'
 
-def plot_cumulative_revenue(df_costs, output_dir):
+def plot_cumulative_revenue(df_results, output_dir):
     print("Plotting cumulative revenue...")
     plt.figure(figsize=(12, 6))
-    df_costs = df_costs.sort_values('target_date')
-    df_costs['cum_net_revenue'] = df_costs['net_revenue'].cumsum() / 1e6
+    df_results = df_results.sort_values('target_date')
+    df_results['cum_net_revenue'] = df_results['net_revenue'].cumsum() / 1e6
     
-    dates = pd.to_datetime(df_costs['target_date'])
-    plt.plot(dates, df_costs['cum_net_revenue'], linewidth=3, color='#2ECC71', label='Cumulative Net Revenue')
+    dates = pd.to_datetime(df_results['target_date'])
+    plt.plot(dates, df_results['cum_net_revenue'], linewidth=3, color='#2ECC71', label='Cumulative Net Revenue')
     
-    plt.title("Post-Recalibration Cumulative Net Revenue (143 Days)", fontsize=16, fontweight='bold', pad=20)
+    plt.title("Cumulative Net Revenue (Soft Terminal + SoC Chaining)\n143-Day Backtest (Feb–Jun 2025)", fontsize=16, fontweight='bold', pad=20)
     plt.ylabel("Cumulative Revenue (₹M)", fontsize=12)
     plt.xlabel("Date", fontsize=12)
-    plt.fill_between(dates, df_costs['cum_net_revenue'], color='#2ECC71', alpha=0.15)
+    plt.fill_between(dates, df_results['cum_net_revenue'], color='#2ECC71', alpha=0.15)
     
     plt.grid(True, linestyle='--', alpha=0.6)
     plt.xticks(rotation=45)
@@ -33,15 +34,15 @@ def plot_cumulative_revenue(df_costs, output_dir):
     plt.savefig(output_dir / "cumulative_revenue.svg")
     plt.close()
 
-def plot_daily_distribution(df_costs, output_dir):
+def plot_daily_distribution(df_results, output_dir):
     print("Plotting daily distribution...")
     plt.figure(figsize=(10, 6))
-    sns.histplot(df_costs['net_revenue'] / 1e3, kde=True, color='#3498DB', bins=30, alpha=0.7)
+    sns.histplot(df_results['net_revenue'] / 1e3, kde=True, color='#3498DB', bins=30, alpha=0.7)
     
-    mean_rev = (df_costs['net_revenue'] / 1e3).mean()
+    mean_rev = (df_results['net_revenue'] / 1e3).mean()
     plt.axvline(mean_rev, color='#E74C3C', linestyle='--', linewidth=2, label=f'Mean: ₹{mean_rev:.1f}K')
     
-    plt.title("Daily Realized Net Revenue Distribution", fontsize=16, fontweight='bold', pad=20)
+    plt.title("Daily Realized Net Revenue Distribution\n(Soft Terminal Baseline)", fontsize=16, fontweight='bold', pad=20)
     plt.xlabel("Daily Net Revenue (₹K)", fontsize=12)
     plt.ylabel("Frequency", fontsize=12)
     plt.legend()
@@ -50,20 +51,27 @@ def plot_daily_distribution(df_costs, output_dir):
     plt.savefig(output_dir / "daily_revenue_distribution.svg")
     plt.close()
 
-def plot_expected_vs_realized(df_p3b, output_dir):
+def plot_expected_vs_realized(df_results, output_dir):
     print("Plotting expected vs realized...")
+    # Filter out potential NaNs
+    df = df_results.dropna(subset=['expected_revenue', 'realized_revenue'])
+    
     plt.figure(figsize=(10, 10))
-    plt.scatter(df_p3b['expected_revenue'] / 1e3, df_p3b['realized_revenue'] / 1e3, 
+    plt.scatter(df['expected_revenue'] / 1e3, df['realized_revenue'] / 1e3, 
                 alpha=0.6, color='#E67E22', edgecolors='w', s=60)
     
-    max_val = max(df_p3b['expected_revenue'].max(), df_p3b['realized_revenue'].max()) / 1e3
+    max_val = max(df['expected_revenue'].max(), df['realized_revenue'].max()) / 1e3
+    # Add a buffer
+    max_val *= 1.05
     plt.plot([0, max_val], [0, max_val], color='#2C3E50', linestyle='--', alpha=0.5, label='Ideal Alignment')
     
-    plt.title("Prediction Integrity: Expected vs. Realized Daily Revenue", fontsize=16, fontweight='bold', pad=20)
+    plt.title("Expected vs. Realized Daily Revenue\n(Soft Terminal Baseline)", fontsize=16, fontweight='bold', pad=20)
     plt.xlabel("Expected Revenue (Stochastic Optimizer) [₹K]", fontsize=12)
     plt.ylabel("Realized Revenue (Actual Market Prices) [₹K]", fontsize=12)
     plt.legend()
     plt.axis('equal')
+    plt.xlim(0, max_val)
+    plt.ylim(0, max_val)
     plt.grid(True, linestyle='--', alpha=0.6)
     plt.tight_layout()
     plt.savefig(output_dir / "expected_vs_realized.png")
@@ -74,7 +82,12 @@ def plot_efficient_frontier(df_cvar, output_dir):
     print("Plotting efficient frontier...")
     plt.figure(figsize=(12, 7))
     
-    # Scale worst day to K
+    # Check columns
+    required_cols = ['net_revenue_m', 'worst_day_k', 'lambda']
+    if not all(col in df_cvar.columns for col in required_cols):
+        print("Warning: Missing columns for efficient frontier plot. Skipping.")
+        return
+
     plt.plot(df_cvar['net_revenue_m'], df_cvar['worst_day_k'], marker='o', 
              linewidth=3, markersize=10, color='#9B59B6', label='Stochastic Efficient Frontier')
     
@@ -95,51 +108,54 @@ def plot_efficient_frontier(df_cvar, output_dir):
 def plot_forecast_metrics(eval_json, output_dir):
     print("Plotting forecast metrics (WMAPE and Calibration)...")
     
-    # 1. WMAPE by Hour
-    plt.figure(figsize=(12, 6))
-    dam_diag = eval_json['dam_model']['backtest']['hourly_diagnostics']
-    rtm_diag = eval_json['rtm_model']['backtest']['hourly_diagnostics']
-    
-    hours = sorted([int(h) for h in dam_diag.keys()])
-    dam_wmape = [dam_diag[str(h)]['wmape'] for h in hours]
-    rtm_wmape = [rtm_diag[str(h)]['wmape'] for h in hours]
-    
-    plt.plot(hours, dam_wmape, label='DAM (24h lead)', marker='o', linewidth=2, color='#E67E22')
-    plt.plot(hours, rtm_wmape, label='RTM (1h rolling)', marker='s', linewidth=2, color='#1ABC9C')
-    
-    plt.title("Forecast Error (WMAPE) by Hour of Day", fontsize=16, fontweight='bold', pad=20)
-    plt.xlabel("Hour of Delivery", fontsize=12)
-    plt.ylabel("WMAPE (%)", fontsize=12)
-    plt.xticks(range(24))
-    plt.legend()
-    plt.grid(True, linestyle='--', alpha=0.6)
-    plt.tight_layout()
-    plt.savefig(output_dir / "forecast_wmape_by_hour.png")
-    plt.savefig(output_dir / "forecast_wmape_by_hour.svg")
-    plt.close()
+    try:
+        dam_diag = eval_json['dam_model']['backtest']['hourly_diagnostics']
+        rtm_diag = eval_json['rtm_model']['backtest']['hourly_diagnostics']
+        
+        # 1. WMAPE by Hour
+        plt.figure(figsize=(12, 6))
+        hours = sorted([int(h) for h in dam_diag.keys()])
+        dam_wmape = [dam_diag[str(h)]['wmape'] for h in hours]
+        rtm_wmape = [rtm_diag[str(h)]['wmape'] for h in hours]
+        
+        plt.plot(hours, dam_wmape, label='DAM (24h lead)', marker='o', linewidth=2, color='#E67E22')
+        plt.plot(hours, rtm_wmape, label='RTM (1h rolling)', marker='s', linewidth=2, color='#1ABC9C')
+        
+        plt.title("Forecast Error (WMAPE) by Hour of Day", fontsize=16, fontweight='bold', pad=20)
+        plt.xlabel("Hour of Delivery", fontsize=12)
+        plt.ylabel("WMAPE (%)", fontsize=12)
+        plt.xticks(range(24))
+        plt.legend()
+        plt.grid(True, linestyle='--', alpha=0.6)
+        plt.tight_layout()
+        plt.savefig(output_dir / "forecast_wmape_by_hour.png")
+        plt.savefig(output_dir / "forecast_wmape_by_hour.svg")
+        plt.close()
 
-    # 2. Calibration
-    plt.figure(figsize=(8, 8))
-    qs = [0.1, 0.25, 0.5, 0.75, 0.9]
-    dam_prob = eval_json['dam_model']['backtest']['probabilistic']
-    rtm_prob = eval_json['rtm_model']['backtest']['probabilistic']
-    
-    dam_cov = [dam_prob[f'coverage_q{int(q*100)}'] for q in qs]
-    rtm_cov = [rtm_prob[f'coverage_q{int(q*100)}'] for q in qs]
-    
-    plt.plot(qs, dam_cov, 'o-', label='DAM Calibration', linewidth=2, color='#E67E22')
-    plt.plot(qs, rtm_cov, 's-', label='RTM Calibration', linewidth=2, color='#1ABC9C')
-    plt.plot([0, 1], [0, 1], color='#2C3E50', linestyle='--', alpha=0.5, label='Ideal Calibration')
-    
-    plt.title("Probabilistic Calibration (Predicted vs. Actual)", fontsize=16, fontweight='bold', pad=20)
-    plt.xlabel("Predicted Quantile Probability Level", fontsize=12)
-    plt.ylabel("Observed Frequency (Actuals)", fontsize=12)
-    plt.legend()
-    plt.grid(True, linestyle='--', alpha=0.6)
-    plt.tight_layout()
-    plt.savefig(output_dir / "quantile_calibration.png")
-    plt.savefig(output_dir / "quantile_calibration.svg")
-    plt.close()
+        # 2. Calibration
+        plt.figure(figsize=(8, 8))
+        qs = [0.1, 0.25, 0.5, 0.75, 0.9]
+        dam_prob = eval_json['dam_model']['backtest']['probabilistic']
+        rtm_prob = eval_json['rtm_model']['backtest']['probabilistic']
+        
+        dam_cov = [dam_prob[f'coverage_q{int(q*100)}'] for q in qs]
+        rtm_cov = [rtm_prob[f'coverage_q{int(q*100)}'] for q in qs]
+        
+        plt.plot(qs, dam_cov, 'o-', label='DAM Calibration', linewidth=2, color='#E67E22')
+        plt.plot(qs, rtm_cov, 's-', label='RTM Calibration', linewidth=2, color='#1ABC9C')
+        plt.plot([0, 1], [0, 1], color='#2C3E50', linestyle='--', alpha=0.5, label='Ideal Calibration')
+        
+        plt.title("Probabilistic Calibration (Predicted vs. Actual)", fontsize=16, fontweight='bold', pad=20)
+        plt.xlabel("Predicted Quantile Probability Level", fontsize=12)
+        plt.ylabel("Observed Frequency (Actuals)", fontsize=12)
+        plt.legend()
+        plt.grid(True, linestyle='--', alpha=0.6)
+        plt.tight_layout()
+        plt.savefig(output_dir / "quantile_calibration.png")
+        plt.savefig(output_dir / "quantile_calibration.svg")
+        plt.close()
+    except KeyError as e:
+        print(f"Skipping forecast metrics due to missing key: {e}")
 
 def plot_forecast_fan(output_dir):
     print("Plotting forecast fan for sample day...")
@@ -147,9 +163,26 @@ def plot_forecast_fan(output_dir):
     sample_date = "2025-04-10"
     
     try:
-        # Load recalibrated dam quantiles
-        df_dam = pd.read_parquet("Data/Predictions/dam_quantiles_backtest_recalibrated.parquet")
-        df_feat = pd.read_parquet("Data/Features/dam_features_backtest.parquet")
+        # Load recalibrated dam quantiles if available, else raw
+        recal_path = "Data/Predictions/dam_quantiles_backtest_recalibrated.parquet"
+        raw_path = "Data/Predictions/dam_quantiles_backtest.parquet"
+        feat_path = "Data/Features/dam_features_backtest.parquet"
+        
+        if Path(recal_path).exists():
+            df_dam = pd.read_parquet(recal_path)
+            title_suffix = "(Recalibrated)"
+        elif Path(raw_path).exists():
+            df_dam = pd.read_parquet(raw_path)
+            title_suffix = "(Raw)"
+        else:
+            print("Skipping fan plot: No quantile predictions found.")
+            return
+
+        if not Path(feat_path).exists():
+            print("Skipping fan plot: No features found.")
+            return
+            
+        df_feat = pd.read_parquet(feat_path)
         
         day_pred = df_dam[df_dam['target_date'] == sample_date].sort_values('target_hour')
         day_actual = df_feat[df_feat['target_date'] == sample_date].sort_values('target_hour')
@@ -167,7 +200,7 @@ def plot_forecast_fan(output_dir):
         plt.plot(hours, day_pred['q50'], color='#E67E22', linewidth=2.5, label='Median Forecast (q50)')
         plt.plot(hours, actual, color='#2C3E50', linewidth=3, marker='o', markersize=4, label='Realized Actual Prices')
         
-        plt.title(f"DAM Price Forecast Fan vs. Realized: {sample_date}", fontsize=16, fontweight='bold', pad=20)
+        plt.title(f"DAM Price Forecast Fan vs. Realized: {sample_date} {title_suffix}", fontsize=16, fontweight='bold', pad=20)
         plt.xlabel("Hour of Day", fontsize=12)
         plt.ylabel("Price (₹/MWh)", fontsize=12)
         plt.xticks(range(24))
@@ -179,6 +212,7 @@ def plot_forecast_fan(output_dir):
         plt.close()
     except Exception as e:
         print(f"Error plotting fan: {e}")
+        traceback.print_exc()
 
 def main():
     print("============================================================")
@@ -188,26 +222,53 @@ def main():
     output_dir = Path("results/charts")
     output_dir.mkdir(parents=True, exist_ok=True)
     
-    # Load data
-    try:
-        df_costs = pd.read_csv("Data/Results/phase3c/backtest_results_with_costs.csv")
-        df_p3b = pd.read_csv("Data/Results/phase3b/backtest_results.csv")
-        df_cvar = pd.read_csv("Data/Backtest/cvar_sweep/efficient_frontier_recalibrated.csv")
-        with open("results/forecast_evaluation.json", 'r') as f:
-            eval_json = json.load(f)
-            
-        plot_cumulative_revenue(df_costs, output_dir)
-        plot_daily_distribution(df_costs, output_dir)
-        plot_expected_vs_realized(df_p3b, output_dir)
-        plot_efficient_frontier(df_cvar, output_dir)
-        plot_forecast_metrics(eval_json, output_dir)
-        plot_forecast_fan(output_dir)
+    # Load Main Results (Soft Terminal Baseline)
+    results_path = "Data/Results/phase3b/backtest_results.csv"
+    if Path(results_path).exists():
+        print(f"Loading results from {results_path}...")
+        df_results = pd.read_csv(results_path)
         
-        print("\n✅ All charts regenerated in results/charts/")
-    except Exception as e:
-        print(f"\n❌ Error during visualization: {e}")
-        import traceback
-        traceback.print_exc()
+        try:
+            plot_cumulative_revenue(df_results, output_dir)
+        except Exception: traceback.print_exc()
+            
+        try:
+            plot_daily_distribution(df_results, output_dir)
+        except Exception: traceback.print_exc()
+            
+        try:
+            plot_expected_vs_realized(df_results, output_dir)
+        except Exception: traceback.print_exc()
+    else:
+        print(f"❌ Critical: {results_path} not found. Skipping revenue charts.")
+
+    # Efficient Frontier (CVaR)
+    cvar_path = "Data/Backtest/cvar_sweep/efficient_frontier_recalibrated.csv"
+    if Path(cvar_path).exists():
+        try:
+            df_cvar = pd.read_csv(cvar_path)
+            plot_efficient_frontier(df_cvar, output_dir)
+        except Exception: traceback.print_exc()
+    else:
+        print(f"⚠️ {cvar_path} not found. Skipping frontier plot.")
+        
+    # Forecast Metrics
+    eval_path = "results/forecast_evaluation.json"
+    if Path(eval_path).exists():
+        try:
+            with open(eval_path, 'r') as f:
+                eval_json = json.load(f)
+            plot_forecast_metrics(eval_json, output_dir)
+        except Exception: traceback.print_exc()
+    else:
+        print(f"⚠️ {eval_path} not found. Skipping forecast metrics.")
+
+    # Fan Plot
+    try:
+        plot_forecast_fan(output_dir)
+    except Exception: traceback.print_exc()
+        
+    print("\n✅ Chart regeneration complete.")
 
 if __name__ == "__main__":
     main()
