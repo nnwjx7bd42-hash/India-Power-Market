@@ -13,9 +13,9 @@ A **Multi-Day Stochastic Programming** framework for Battery Energy Storage Syst
 | 48h Rolling Horizon (Option A) | 196.9 | 1,377 | −104 | −3.7% |
 | 7-Day Extensive Form (Option B) | 200.6 | 1,403 | −121 | −1.9% |
 | 7-Day Extensive Form (Option A) | 195.2 | 1,365 | −111 | −4.5% |
-| Perfect Foresight (Ceiling) | 251.0 | — | — | — |
+| Perfect Foresight (Ceiling) | 243.6 | — | — | — |
 
-**Capture Ratio**: 80.4% of perfect-foresight revenue (net-cost basis, soft terminal).
+**Capture Ratio**: 82.8% of perfect-foresight revenue (₹201.8M / ₹243.6M).
 
 > **Option A** = Hard terminal (SoC must return to 100 MWh each day).  
 > **Option B** = Physical floor only (SoC allowed to drop to 20 MWh).
